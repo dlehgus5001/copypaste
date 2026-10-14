@@ -6,7 +6,37 @@
 
 ## 설치와 첫 실행
 
-서버에 라이브러리가 이미 있으면 아래의 **기존 환경 사용** 절차를 먼저 따르세요. 별도 venv와 전체 wheelhouse는 새 환경을 완전히 재현할 때 사용하는 경로입니다.
+프로젝트 폴더에서 사용할 Python 3.12 환경을 활성화하고, 다음 명령부터 시작합니다. 폐쇄망에서는 pip가 내부 저장소 또는 로컬 wheel만 사용하도록 설정한 상태에서 실행하세요.
+
+```bash
+pip install -r requirement.txt
+```
+
+`requirement.txt`는 `requirements.txt`를 불러오는 진입 파일이므로 두 이름 모두 같은 학습 의존성을 설치합니다. 조건을 만족하는 기존 패키지는 재사용합니다. 기존 버전을 변경하지 않거나 설치된 OpenCV 제공 패키지를 구분해야 한다면 아래 **기존 환경 사용**의 점검 절차를 사용하세요.
+
+외부 저장소에 접근하지 않고 로컬 wheel에서만 설치하려면 다음과 같이 실행합니다. 이미 필요한 패키지가 모두 있으면 추가 wheel은 필요하지 않습니다.
+
+```bash
+pip install --no-index --find-links=./wheelhouse -r requirement.txt
+```
+
+설치 후 같은 Python으로 환경을 연결하고, 필요한 C++ 평가 확장을 빌드한 뒤 샘플을 실행합니다.
+
+```bash
+export YOLOX_PYTHON="$(python -c 'import sys; print(sys.executable)')"
+source scripts/env.sh
+python scripts/check_existing_env.py --include-build --output artifacts/installed-env
+# 빌드 도구가 부족할 때만 로컬 wheel로 설치
+# pip install --no-index --find-links=./wheelhouse -r requirements-build.txt
+bash scripts/build_yolox.sh
+python scripts/make_sample_data.py  # 기존 샘플이 있으면 생략
+bash scripts/train_original.sh --device cuda
+bash scripts/train_online.sh --device cuda
+```
+
+GPU가 없는 머신은 두 학습 명령의 `cuda`를 `cpu`로 바꾸어 진단합니다. 별도 venv와 전체 wheelhouse는 아래처럼 새 환경을 완전히 재현할 때 사용하는 경로입니다.
+
+## 새 환경의 오프라인 설치 묶음 준비
 
 GitHub에서 소스를 받는 온라인 준비 머신에서는 아래 순서로 **이미 검증한 버전의 wheel**을 수집합니다. Git에는 대용량 wheelhouse·가상환경·학습 결과가 포함되지 않습니다.
 

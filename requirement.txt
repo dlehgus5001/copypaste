@@ -1,0 +1,3 @@
+# Compatibility entry point for the documented install command.
+# Keep dependency declarations in requirements.txt only.
+-r requirements.txt
