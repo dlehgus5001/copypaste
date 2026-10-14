@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/Megvii-BaseDetection/YOLOX",
+  "commit": "6ddff4824372906469a7fae2dc3206c7aa4bbaee",
+  "license": "Apache-2.0",
+  "source": "vendored without Git metadata; no runtime clone"
+}

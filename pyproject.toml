@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "offline-yolox-workflows"
+version = "0.1.0"
+description = "Local YOLOX original and online copy-paste workflows"
+requires-python = ">=3.12,<3.13"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "third_party/YOLOX"]
+addopts = "-ra"
+markers = ["gpu: requires a real NVIDIA GPU with usable CUDA"]

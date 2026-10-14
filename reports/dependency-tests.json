@@ -1,0 +1,19 @@
+{
+  "command": "OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 .venv/bin/python scripts/no_network.py .venv/bin/python -m pytest tests/test_dependencies.py -q",
+  "network_isolation": "Inherited Linux seccomp denies AF_INET and AF_INET6 socket creation; AF_UNIX remains available",
+  "exit_code": 0,
+  "passed": 5,
+  "skipped": 0,
+  "warnings": 1,
+  "duration_seconds": 1.75,
+  "checks": [
+    "NumPy/OpenCV PNG and pycocotools RLE mask roundtrip, area, bbox, NumPy/Torch interop",
+    "TensorBoard SummaryWriter writes scalars; EventAccumulator reads their exact steps and values",
+    "torchvision CPU NMS returns expected suppression indices",
+    "pycocotools missing info metadata and standard COCO perfect-prediction AP/AR",
+    "Built official FastCOCOEval CPU C++ extension stats, precision and recall match standard COCOeval within 1e-12"
+  ],
+  "warning_detail": "pycocotools.mask.decode emits a NumPy __array__(copy=...) DeprecationWarning; roundtrip output, bbox and area assertions passed",
+  "gpu_executed": false,
+  "gpu_reason": "No accessible NVIDIA GPU in this execution environment"
+}

@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "validated_at_utc": "2026-10-14T03:07:27.266572+00:00",
+  "target": {
+    "python": "3.12",
+    "os": "Linux",
+    "architecture": "x86_64",
+    "torch": "2.8.0+cu129",
+    "torchvision": "0.23.0+cu129",
+    "cuda_runtime": "12.9",
+    "minimum_glibc": "2.31"
+  },
+  "wheel_count": 51,
+  "wheel_total_bytes": 4572267583,
+  "network_isolation": "Linux seccomp rejects AF_INET and AF_INET6 socket creation in scripts/no_network.py; inherited by installer subprocesses",
+  "first_install": {
+    "path": ".venv",
+    "exit_code": 0,
+    "log": "artifacts/offline-install-first.log"
+  },
+  "fresh_repeat_install": {
+    "path": ".venv-offline-recheck",
+    "exit_code": 0,
+    "log": "artifacts/offline-install-repeat.log",
+    "removed_after_validation": true
+  },
+  "pip_check": "passed for both installs",
+  "wheel_integrity": "all manifest SHA256 hashes and file sizes passed for both installs",
+  "installed_versions": "all 51 exact lock versions passed for both installs",
+  "cpu_runtime_checks": [
+    "torch and torchvision exact cu129 builds",
+    "torch.version.cuda == 12.9",
+    "torchvision CPU NMS",
+    "NumPy and OpenCV resize",
+    "pycocotools, TensorBoard and YOLOX imports"
+  ],
+  "gpu_validation": "not run: host has no GPU, NVIDIA driver or nvcc",
+  "installed_environment_probe": "reports/environment-after.json"
+}

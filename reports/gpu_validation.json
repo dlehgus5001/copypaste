@@ -1,0 +1,19 @@
+{
+  "status": "blocked",
+  "checks": [],
+  "unverified": [
+    "CUDA tensor and torchvision CUDA NMS",
+    "YOLOX GPU forward/backward FP32/AMP",
+    "Native Trainer epochs in both modes",
+    "Native checkpoint resume and validation"
+  ],
+  "runtime": {
+    "python": "3.12.14",
+    "torch": "2.8.0+cu129",
+    "torchvision": "0.23.0+cu129",
+    "torch_cuda": "12.9",
+    "cudnn": 91002,
+    "gpu_available": false
+  },
+  "reason": "No accessible NVIDIA GPU in this execution environment"
+}

@@ -1,0 +1,12 @@
+.venv*/
+wheelhouse/
+.pip-cache/
+data/sample/
+artifacts/
+outputs/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+build/
+*.so

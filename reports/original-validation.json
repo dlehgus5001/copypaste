@@ -1,0 +1,186 @@
+{
+  "workflow": "Original",
+  "status": "cpu_diagnostic_verified",
+  "runtime": {
+    "python": "3.12.14",
+    "torch": "2.8.0+cu129",
+    "cuda_runtime": "12.9",
+    "cuda_available": false
+  },
+  "network_validation": {
+    "mechanism": "inherited Linux seccomp socket filter",
+    "ipv4_denied": true,
+    "ipv6_denied": true,
+    "af_unix_available": true
+  },
+  "tests": {
+    "command": ".venv/bin/python scripts/no_network.py .venv/bin/python -m pytest -q tests/test_original.py",
+    "exit_code": 0,
+    "passed": 13,
+    "warnings": 1,
+    "duration_seconds": 3.86,
+    "log": "artifacts/original-tests-after-finetune.log",
+    "meaningful_checks": [
+      "official model detection loss forward/backward and SGD updates",
+      "finite full epochs",
+      "exact interrupted/resumed model, optimizer, EMA, scaler and RNG equality with mosaic/HSV/flip",
+      "valid zero-prediction COCO evaluation",
+      "perfect-box COCO AP=1 through official postprocess and category conversion",
+      "CUDA absent rejection",
+      "local-only checkpoints",
+      "deterministic worker seed",
+      "train/validation category taxonomy agreement",
+      "official model presets",
+      "official local COCO80-class nano to one-class fine tuning restores backbone/regression/objectness tensors while keeping incompatible classification tensors initialized",
+      "unrelated fine-tune checkpoint with no compatible tensors is rejected"
+    ]
+  },
+  "smoke": {
+    "config": "configs/original.json",
+    "data": "data/sample",
+    "preset": "nano",
+    "initial_weights": "random; no pretrained checkpoint",
+    "epochs": [
+      {
+        "workflow": "cpu_diagnostic",
+        "epoch": 1,
+        "iterations": 4,
+        "images": 8,
+        "mean_loss": 11.842369794845581,
+        "losses": [
+          12.186568260192871,
+          12.319293975830078,
+          11.311396598815918,
+          11.552220344543457
+        ],
+        "evaluation": {
+          "ap50_95": 0.0,
+          "ap50": 0.0,
+          "images": 4,
+          "detections": 0,
+          "backend": "standard",
+          "stats": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -1.0,
+            -1.0
+          ],
+          "summary": "Running per image evaluation...\nEvaluate annotation type *bbox*\nDONE (t=0.01s).\nAccumulating evaluation results...\nDONE (t=0.00s).\n Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = -1.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = -1.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = -1.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = -1.000\n"
+        }
+      },
+      {
+        "workflow": "cpu_diagnostic",
+        "epoch": 2,
+        "iterations": 4,
+        "images": 8,
+        "mean_loss": 14.10817551612854,
+        "losses": [
+          13.934099197387695,
+          13.918845176696777,
+          13.67229175567627,
+          14.907465934753418
+        ],
+        "evaluation": {
+          "ap50_95": 0.0,
+          "ap50": 0.0,
+          "images": 4,
+          "detections": 0,
+          "backend": "standard",
+          "stats": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -1.0,
+            -1.0
+          ],
+          "summary": "Running per image evaluation...\nEvaluate annotation type *bbox*\nDONE (t=0.01s).\nAccumulating evaluation results...\nDONE (t=0.00s).\n Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = -1.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = -1.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = -1.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = -1.000\n"
+        }
+      }
+    ],
+    "checkpoint": "outputs/original/sample_nano/latest_ckpt.pth",
+    "resume_checkpoint": "outputs/original/sample_nano/epoch_1_ckpt.pth"
+  },
+  "fast_evaluation": {
+    "ap50_95": 0.0,
+    "ap50": 0.0,
+    "images": 4,
+    "detections": 0,
+    "backend": "fast",
+    "stats": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -1.0,
+      -1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -1.0,
+      -1.0
+    ],
+    "summary": "Running per image evaluation...\nEvaluate annotation type *bbox*\nCOCOeval_opt.evaluate() finished in 0.01 seconds.\nAccumulating evaluation results...\nCOCOeval_opt.accumulate() finished in 0.00 seconds.\n Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = -1.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = -1.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = -1.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = -1.000\n",
+    "checkpoint": "/workspace/copypaste/outputs/original/sample_nano/latest_ckpt.pth",
+    "device": "cpu"
+  },
+  "gpu_validation": {
+    "status": "not_executed_no_cuda_device",
+    "native_trainer_preserved": true,
+    "cpu_harness_is_native_trainer": false
+  },
+  "limitations": [
+    "Synthetic diagnostic samples do not establish accuracy on real data.",
+    "No CUDA device is attached; native CUDA training, CUDA NMS and FP16 are not validated here.",
+    "Native CUDA resume restores raw model, optimizer, scaler, EMA, RNG and epoch schedule, but does not serialize the upstream prefetch buffer or infinite-sampler cursor; bit-exact resumed GPU augmentation order is not claimed."
+  ],
+  "upstream_source_changed": false,
+  "tests_before_finetune": {
+    "command": ".venv/bin/python scripts/no_network.py .venv/bin/python -m pytest -q tests/test_original.py",
+    "exit_code": 0,
+    "passed": 11,
+    "warnings": 1,
+    "duration_seconds": 3.89,
+    "log": "artifacts/original-tests.log",
+    "meaningful_checks": [
+      "official model detection loss forward/backward and SGD updates",
+      "finite full epochs",
+      "exact interrupted/resumed model, optimizer, EMA, scaler and RNG equality with mosaic/HSV/flip",
+      "valid zero-prediction COCO evaluation",
+      "perfect-box COCO AP=1 through official postprocess and category conversion",
+      "CUDA absent rejection",
+      "local-only checkpoints",
+      "deterministic worker seed",
+      "train/validation category taxonomy agreement",
+      "official model presets",
+      "official local COCO80-class nano to one-class fine tuning restores backbone/regression/objectness tensors while keeping incompatible classification tensors initialized",
+      "unrelated fine-tune checkpoint with no compatible tensors is rejected"
+    ]
+  },
+  "fine_tuning": {
+    "loader": "official yolox.utils.load_ckpt",
+    "shape_mismatch": "skip with original warning; preserve initialized target tensor",
+    "resume_load": "strict",
+    "local_checkpoints_only": true,
+    "focused_tests_passed": 2,
+    "focused_tests_duration_seconds": 1.99,
+    "focused_log": "artifacts/original-finetune-tests.log",
+    "actual_user_pretrained_weights_provided": false,
+    "unit_weights_origin": "locally generated official 80-class nano model state"
+  }
+}

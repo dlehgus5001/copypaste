@@ -1,0 +1,19 @@
+# Resolution inputs. Offline installation uses requirements-lock.txt.
+# Python 3.12 / Linux x86_64; CUDA wheels are usable for CPU validation too.
+torch==2.8.0+cu129
+torchvision==0.23.0+cu129
+numpy>=2.2,<3
+opencv-python-headless>=4.12,<5
+pycocotools>=2.0.10,<3
+tensorboard>=2.20,<3
+loguru>=0.7,<1
+tqdm>=4.67,<5
+thop>=0.1.1
+tabulate>=0.9,<1
+psutil>=7,<9
+ninja>=1.13,<2
+cmake>=4,<5
+setuptools>=80
+wheel>=0.45
+pip>=25
+pytest>=8,<10

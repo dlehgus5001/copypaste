@@ -1,0 +1,122 @@
+{
+  "format_version": 1,
+  "mode": "online_copy_paste",
+  "date": "2026-10-14",
+  "test_suite": {
+    "command": ".venv/bin/python scripts/no_network.py .venv/bin/python -m pytest tests/test_copy_paste.py",
+    "tests_passed": 26,
+    "tests_failed": 0,
+    "exit_code": 0,
+    "duration_seconds": 10.33,
+    "network_isolation": {
+      "mechanism": "Linux seccomp socket-family filter inherited by child processes",
+      "blocked": [
+        "AF_INET",
+        "AF_INET6"
+      ],
+      "allowed_for_worker_ipc": [
+        "AF_UNIX"
+      ],
+      "network_denial_self_check_passed": true
+    },
+    "verified": [
+      "Eager local object/image/mask validation and COCO category alignment",
+      "Cardinal rotation foreground-area preservation",
+      "Actual rotation and occlusion with exact final visible-mask bounding boxes",
+      "Fresh synthesis for repeated dataset indices",
+      "No synthetic training images written to disk",
+      "Zero-worker and two-worker fork/spawn reproducibility and distinct worker random streams",
+      "Fresh official TrainTransform HSV/flip loader replay at zero and two workers",
+      "Official YOLOX finite and native infinite sampler batch compatibility",
+      "COCO validation-only data support without a COCO training split",
+      "Preview exported masks, images and bounding-box metadata consistency",
+      "Official YOLOX forward, detection losses, backward, SGD, EMA and COCO evaluation on CPU",
+      "Bit-exact finite CPU epoch-boundary resume of model, optimizer, EMA, scaler and RNG state"
+    ]
+  },
+  "actual_cli": {
+    "command": "bash scripts/train_online.sh --device cpu",
+    "network_isolation": "scripts/no_network.py Linux seccomp AF_INET/AF_INET6 socket denial",
+    "exit_code": 0,
+    "device": "cpu",
+    "workflow": "cpu_diagnostic",
+    "native_cuda_trainer": false,
+    "completed_epochs": 2,
+    "diagnostic_report": "outputs/online/sample_nano/diagnostic_report.json",
+    "checkpoint": "outputs/online/sample_nano/latest_ckpt.pth",
+    "epochs": [
+      {
+        "epoch": 1,
+        "iterations": 4,
+        "images": 8,
+        "mean_loss": 11.274826526641846,
+        "losses": [
+          11.227797508239746,
+          11.538723945617676,
+          11.193849563598633,
+          11.138935089111328
+        ],
+        "evaluation": {
+          "images": 4,
+          "detections": 0,
+          "ap50_95": 0.0,
+          "ap50": 0.0,
+          "backend": "standard"
+        }
+      },
+      {
+        "epoch": 2,
+        "iterations": 4,
+        "images": 8,
+        "mean_loss": 13.422547101974487,
+        "losses": [
+          14.976473808288574,
+          13.535133361816406,
+          12.801902770996094,
+          12.376678466796875
+        ],
+        "evaluation": {
+          "images": 4,
+          "detections": 0,
+          "ap50_95": 0.0,
+          "ap50": 0.0,
+          "backend": "standard"
+        }
+      }
+    ],
+    "interpretation": "Tiny synthetic CPU diagnostic verifies execution; AP 0 is not a model-quality result."
+  },
+  "preview": {
+    "command": ".venv/bin/python scripts/no_network.py .venv/bin/python -m offline_yolox.preview --config configs/online.json --output outputs/preview --count 4",
+    "exit_code": 0,
+    "count": 4,
+    "manifest": "outputs/preview/manifest.json",
+    "sample_metadata": [
+      "outputs/preview/sample_0000.json",
+      "outputs/preview/sample_0001.json",
+      "outputs/preview/sample_0002.json",
+      "outputs/preview/sample_0003.json"
+    ],
+    "artifacts": "Per-sample raw PNG, box-overlay PNG, visible instance-mask PNGs, metadata JSON",
+    "sample_0000_overlay_visually_inspected": true,
+    "training_exports_synthetic_images": false
+  },
+  "remaining_unverified": [
+    "Actual NVIDIA GPU CUDA tensor and torchvision CUDA NMS execution",
+    "Online native CUDA Trainer FP32 and FP16 iteration, epoch and resume",
+    "Actual SAM3-exported object assets and real aerial background data",
+    "Object-size distribution calibration against measured target aerial imagery"
+  ],
+  "reproducibility_scope": {
+    "fresh_loaders": "Requires unchanged seed, epoch, worker count, batch size, sampler order, assets and dependencies.",
+    "worker_count_changes": "Different worker counts are not claimed to produce identical synthesized samples.",
+    "finite_cpu_resume": "Bit-exact at epoch boundaries verified.",
+    "native_cuda_resume": "Checkpoint restores training state; infinite worker/prefetch synthesis stream is not bit-exact restored.",
+    "mid_iteration_resume": "Not supported."
+  },
+  "sample_limitations": {
+    "sam3_inference_used": false,
+    "sample_assets": "Locally generated diagnostic shapes and backgrounds.",
+    "size_distribution": "Explicitly uncalibrated diagnostic pixel distribution; requires real aerial calibration."
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "saved": true,
+  "fields": [
+    "install_script",
+    "start_skill"
+  ],
+  "requires_publish": true,
+  "published": false,
+  "fresh_task_restore_verified": false,
+  "install_script_execution_exit_code": 0
+}

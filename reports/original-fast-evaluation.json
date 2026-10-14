@@ -1,0 +1,24 @@
+{
+  "ap50_95": 0.0,
+  "ap50": 0.0,
+  "images": 4,
+  "detections": 0,
+  "backend": "fast",
+  "stats": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -1.0,
+    -1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -1.0,
+    -1.0
+  ],
+  "summary": "Running per image evaluation...\nEvaluate annotation type *bbox*\nCOCOeval_opt.evaluate() finished in 0.01 seconds.\nAccumulating evaluation results...\nCOCOeval_opt.accumulate() finished in 0.00 seconds.\n Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = -1.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = -1.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = -1.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = -1.000\n",
+  "checkpoint": "/workspace/copypaste/outputs/original/sample_nano/latest_ckpt.pth",
+  "device": "cpu"
+}
