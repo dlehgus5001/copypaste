@@ -1,0 +1,13 @@
+{
+  "scenario": "All runtime/build dependencies present except loguru",
+  "planned_packages": [
+    "loguru"
+  ],
+  "installed_only_loguru": true,
+  "existing_package_versions_unchanged": true,
+  "network": "Kernel seccomp IPv4/IPv6 denial",
+  "complete_wheelhouse_required": false,
+  "local_wheels_used": 1,
+  "wheel_bytes": 61595,
+  "exit_code": 0
+}

@@ -69,6 +69,14 @@ Preview를 명시적으로 호출하여 4개의 이미지, Box overlay, instance
 
 대상 서버에서 [OFFLINE_INSTALL.md](OFFLINE_INSTALL.md)에 따라 다시 설치하고 `scripts/environment_probe.py`, `scripts/validate_gpu.py`를 네트워크 차단 상태로 실행해야 합니다. 최종 서버 정보와 실제 데이터가 제공되기 전에는 **전체 GPU 호환 완료·실제 폐쇄망 적용 완료**라고 주장하지 않습니다.
 
+## 기존 라이브러리 재사용 추가 검증
+
+`requirements.txt`와 기존 Python 선택 경로를 추가한 뒤, 네트워크 차단 상태에서 `tests/test_existing_env.py` **11개 테스트가 통과**했습니다. 기존 패키지 교체 거부, OpenCV 재사용/중복 검사, wheel hash·출처 검사, wheelhouse 없는 실제 설치 불필요 경로를 검증했습니다. 결과는 [`reports/pytest-existing-env.xml`](reports/pytest-existing-env.xml)에 있습니다. 이 수치는 앞의 원래 전체 51개 테스트와 별도의 추가 실행입니다.
+
+프로젝트에 `.venv`가 없는 임시 소스 디렉터리에서도 `YOLOX_PYTHON`으로 기존 인터프리터를 선택해 두 모드의 실제 CPU 1 epoch를 각각 실행했습니다. 각 모드 8 images / 4 iterations 및 COCO 평가가 완료됐습니다. [`reports/existing-python-validation.json`](reports/existing-python-validation.json)에 결과를 저장했습니다.
+
+별도의 가상환경에서 loguru만 없는 상태를 만들고, **loguru wheel 한 개(61,595 bytes)**만 제공했습니다. 점검·설치 계획이 loguru 한 개만 선택했고, 네트워크 차단 상태의 설치 뒤 기존 모든 패키지 버전이 그대로임을 확인했습니다. 전체 wheelhouse 또는 CUDA 패키지 재설치가 필요하지 않았습니다. [`reports/existing-env-missing-only-validation.json`](reports/existing-env-missing-only-validation.json)에 기록했습니다. 실제 내부 서버의 버전 조합과 GPU는 여전히 해당 장비에서 검증해야 합니다.
+
 ## 재사용 클라우드 설정
 
 설치 지침 `install_script`와 시작 지침 `start_skill`을 환경 설정 초안에 저장했습니다. 전체 저장 설치 script도 현재 머신에서 실행하여 exit 0을 확인했습니다. 현재 venv·wheel·소스 준비 상태와 초안 저장은 확인했으며, **환경 게시 및 새 작업에서의 복원은 아직 수행하지 않았습니다.** 환경 설정에서 변경 내용을 검토·저장한 뒤 환경을 게시해야 활성화됩니다. 운영 프로세스의 유지에 의존하는 설정은 없습니다.

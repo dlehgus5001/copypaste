@@ -1,0 +1,88 @@
+{
+  "active_interpreter_without_project_venv": "verified",
+  "network_isolation": "seccomp AF_INET/AF_INET6 denied by wrappers",
+  "runs": [
+    {
+      "mode": "original",
+      "selected_python": "/workspace/copypaste/.venv/bin/python",
+      "project_local_venv_exists": false,
+      "exit_code": 0,
+      "epoch": {
+        "epoch": 1,
+        "iterations": 4,
+        "images": 8,
+        "mean_loss": 11.842369794845581,
+        "losses": [
+          12.186568260192871,
+          12.319293975830078,
+          11.311396598815918,
+          11.552220344543457
+        ],
+        "evaluation": {
+          "ap50_95": 0.0,
+          "ap50": 0.0,
+          "images": 4,
+          "detections": 0,
+          "backend": "standard",
+          "stats": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -1.0,
+            -1.0
+          ],
+          "summary": "Running per image evaluation...\nEvaluate annotation type *bbox*\nDONE (t=0.01s).\nAccumulating evaluation results...\nDONE (t=0.00s).\n Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = -1.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = -1.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = -1.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = -1.000\n"
+        }
+      },
+      "log": "artifacts/existing-python-original.log"
+    },
+    {
+      "mode": "online",
+      "selected_python": "/workspace/copypaste/.venv/bin/python",
+      "project_local_venv_exists": false,
+      "exit_code": 0,
+      "epoch": {
+        "epoch": 1,
+        "iterations": 4,
+        "images": 8,
+        "mean_loss": 11.274826526641846,
+        "losses": [
+          11.227797508239746,
+          11.538723945617676,
+          11.193849563598633,
+          11.138935089111328
+        ],
+        "evaluation": {
+          "ap50_95": 0.0,
+          "ap50": 0.0,
+          "images": 4,
+          "detections": 0,
+          "backend": "standard",
+          "stats": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -1.0,
+            -1.0
+          ],
+          "summary": "Running per image evaluation...\nEvaluate annotation type *bbox*\nDONE (t=0.01s).\nAccumulating evaluation results...\nDONE (t=0.00s).\n Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = -1.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = -1.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = -1.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = -1.000\n"
+        }
+      },
+      "log": "artifacts/existing-python-online.log"
+    }
+  ]
+}

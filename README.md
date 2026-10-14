@@ -6,6 +6,8 @@
 
 ## 설치와 첫 실행
 
+서버에 라이브러리가 이미 있으면 아래의 **기존 환경 사용** 절차를 먼저 따르세요. 별도 venv와 전체 wheelhouse는 새 환경을 완전히 재현할 때 사용하는 경로입니다.
+
 GitHub에서 소스를 받는 온라인 준비 머신에서는 아래 순서로 **이미 검증한 버전의 wheel**을 수집합니다. Git에는 대용량 wheelhouse·가상환경·학습 결과가 포함되지 않습니다.
 
 ```bash
@@ -28,6 +30,40 @@ python scripts/make_sample_data.py
 ```
 
 샘플 생성 도구는 기존 데이터를 덮어쓰지 않습니다. 이미 `data/sample/sample_manifest.json`이 있으면 생성 명령을 생략하세요. `--force`는 직접 생성한 샘플을 다시 만들 때만 사용합니다. 샘플은 단순한 차량 모양과 배경이며, 실제 SAM3 결과나 실제 항공영상이 아닙니다.
+
+## 기존 환경 사용
+
+이미 사용하는 Python 3.12의 Conda/venv를 활성화한 뒤 실행합니다. `requirements.txt`는 학습에 필요한 직접 의존성 11개, `requirements-build.txt`는 선택적 C++ 빌드 도구입니다. 전체 전이 의존성 51개를 고정한 `requirements-lock.txt`와 용도가 다릅니다.
+
+```bash
+cd /path/to/copypaste
+export YOLOX_PYTHON="$(python -c 'import sys; print(sys.executable)')"
+"$YOLOX_PYTHON" scripts/check_existing_env.py --plan --include-build \
+  --output artifacts/server-env
+```
+
+이 명령은 패키지를 설치하지 않습니다. 현재 버전, torch/torchvision의 CUDA 12.9 build, CPU NMS와 주요 배열·mask·TensorBoard 동작을 확인합니다. 조건을 모두 만족하면 `no installation needed`를 기록하며 **wheelhouse와 pip 실행이 필요하지 않습니다**. 기존 OpenCV는 python/headless/contrib 중 하나를 재사용합니다. 다른 버전의 패키지로 교체해야 하는 경우에는 충돌을 보고하고 설치 계획을 만들지 않습니다.
+
+부족한 패키지가 있으면 로컬 wheelhouse만 사용해 전이 의존성까지 계획하고 `artifacts/server-env/requirements-missing.txt`에 정확한 버전·SHA256을 기록합니다. 필요한 wheel만 있어도 되며 전체 4.3 GiB를 요구하지 않습니다. 누락된 wheel, 기존 의존성 교체, 중복 OpenCV, 확인되지 않은 wheel은 설치 계획을 차단합니다. 생성된 파일에 실제 패키지 행이 있을 때만 같은 Python으로 설치합니다.
+
+```bash
+PIP_CONFIG_FILE=/dev/null "$YOLOX_PYTHON" scripts/no_network.py "$YOLOX_PYTHON" -m pip \
+  --isolated install --no-index --find-links=./wheelhouse \
+  --no-deps --require-hashes -r artifacts/server-env/requirements-missing.txt
+```
+
+그런 다음 동일 환경을 연결합니다. 프로젝트의 `.venv`를 새로 만들거나 강제로 선택하지 않습니다.
+
+```bash
+source scripts/env.sh
+bash scripts/build_yolox.sh
+bash scripts/train_original.sh --device cuda
+bash scripts/train_online.sh --device cuda
+```
+
+이 모드는 기존 버전을 자동으로 높이거나 낮추지 않습니다. 현재 requirements 범위를 벗어난 기존 NumPy/OpenCV/TensorBoard 등은 충돌로 표시되며, 해당 버전을 유지할 수 있는지는 대상 서버에서 별도 호환성 검증 후 범위를 조정해야 합니다. 버전 범위 안의 모든 조합을 학습 검증했다고 주장하지 않습니다. `--output`은 빈 폴더를 지정하고, 설치 후 재점검할 때는 다른 폴더를 사용하세요. GPU 학습 검증은 `scripts/validate_gpu.py`로 별도 수행합니다.
+
+`pip install -r requirements.txt`도 조건을 만족하는 기존 패키지는 재설치하지 않습니다. 다만 조건이 맞지 않으면 pip가 교체할 수 있고 OpenCV 제공 패키지를 자동 구분하지 않으므로, 기존 환경을 유지하려면 위 점검·누락 목록 절차를 권장합니다.
 
 GPU가 있는 서버에서 두 학습 모드를 실행합니다.
 

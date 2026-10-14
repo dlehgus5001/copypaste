@@ -1,0 +1,5 @@
+# Optional: only needed to build the official FastCOCOEval C++ extension.
+# GCC/G++ and Python headers are supplied by the existing OS environment.
+ninja>=1.13,<2
+setuptools>=80
+wheel>=0.45

@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "python": "3.12.14",
+  "python_executable": "/workspace/copypaste/.venv/bin/python",
+  "packages": [
+    {
+      "requirement": "torch==2.8.0",
+      "name": "torch",
+      "version": "2.8.0+cu129",
+      "status": "satisfied"
+    },
+    {
+      "requirement": "torchvision==0.23.0",
+      "name": "torchvision",
+      "version": "0.23.0+cu129",
+      "status": "satisfied"
+    },
+    {
+      "requirement": "numpy<3,>=2.2",
+      "name": "numpy",
+      "version": "2.5.4",
+      "status": "satisfied"
+    },
+    {
+      "requirement": "opencv-python-headless<5,>=4.12",
+      "name": "opencv-python-headless",
+      "version": "4.14.0.94",
+      "status": "satisfied"
+    },
+    {
+      "requirement": "pycocotools<3,>=2.0.11",
+      "name": "pycocotools",
+      "version": "2.0.11",
+      "status": "satisfied"
+    },
+    {
+      "requirement": "loguru<1,>=0.7",
+      "name": "loguru",
+      "version": "0.7.3",
+      "status": "satisfied"
+    },
+    {
+      "requirement": "tqdm<5,>=4.67",
+      "name": "tqdm",
+      "version": "4.70.1",
+      "status": "satisfied"
+    },
+    {
+      "requirement": "thop>=0.1.1",
+      "name": "thop",
+      "version": "0.1.1-2209072238",
+      "status": "satisfied"
+    },
+    {
+      "requirement": "tabulate<1,>=0.9",
+      "name": "tabulate",
+      "version": "0.10.0",
+      "status": "satisfied"
+    },
+    {
+      "requirement": "psutil<9,>=7",
+      "name": "psutil",
+      "version": "7.2.2",
+      "status": "satisfied"
+    },
+    {
+      "requirement": "tensorboard<3,>=2.20",
+      "name": "tensorboard",
+      "version": "2.21.0",
+      "status": "satisfied"
+    },
+    {
+      "requirement": "ninja<2,>=1.13",
+      "name": "ninja",
+      "version": "1.13.2",
+      "status": "satisfied"
+    },
+    {
+      "requirement": "setuptools>=80",
+      "name": "setuptools",
+      "version": "84.0.0",
+      "status": "satisfied"
+    },
+    {
+      "requirement": "wheel>=0.45",
+      "name": "wheel",
+      "version": "0.48.0",
+      "status": "satisfied"
+    }
+  ],
+  "missing": [],
+  "conflicts": [],
+  "plan": "no installation needed",
+  "framework": {
+    "gpu_validation": "not performed",
+    "torch_version": "2.8.0+cu129",
+    "cuda_build": "12.9",
+    "cuda_available": false,
+    "torchvision_cuda_build": 12090,
+    "torchvision_version": "0.23.0+cu129",
+    "cpu_nms": "passed"
+  },
+  "runtime_checks": {
+    "torch_numpy": "passed",
+    "opencv_pycocotools": "passed",
+    "tensorboard_event_write": "passed",
+    "auxiliary_imports": "passed"
+  },
+  "planned_packages": [],
+  "status": "checked profile satisfied",
+  "validation_context": "prepared cloud CPU environment; requested absent wheelhouse; no installation or pip resolution performed"
+}

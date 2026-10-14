@@ -1,5 +1,11 @@
 # 폐쇄망 설치·반입·문제 해결
 
+## 라이브러리가 이미 설치된 서버
+
+전체 venv 설치를 반복하지 않고 기존 Python을 사용할 수 있습니다. [README의 기존 환경 사용](README.md#기존-환경-사용)에 따라 `check_existing_env.py`로 먼저 점검하세요. 만족한 패키지는 유지하고 부족한 패키지만 로컬 wheel로 계획합니다. 모두 설치되어 있으면 wheelhouse도 필요하지 않습니다. 이 점검은 설치를 실행하지 않으며 버전 충돌을 자동으로 변경하지 않습니다.
+
+`requirements.txt`는 학습용, `requirements-build.txt`는 선택적 빌드용입니다. 테스트용 pytest와 사용하지 않는 CMake, 별도 pip 업그레이드는 이 경로에서 요구하지 않습니다. `YOLOX_PYTHON`에 기존 환경의 Python을 지정하면 학습·평가·C++ 빌드 스크립트 모두 해당 인터프리터를 사용합니다. 기존 범위를 벗어난 버전은 대상에서 검증하기 전까지 호환된다고 가정하지 않습니다.
+
 ## 준비 환경과 적용 범위
 
 이번 wheelhouse는 Debian 13 x86_64 / CPython 3.12에서 수집·검증했습니다. torch 2.8.0+cu129, torchvision 0.23.0+cu129와 모든 전이 의존성을 포함합니다. **묶음 전체는 glibc 2.31 이상**을 요구합니다. PyTorch wheel만의 최소값 2.28과 혼동하지 마세요. GPU·NVIDIA 커널 드라이버·Python 인터프리터 자체는 wheelhouse에 포함되지 않습니다.

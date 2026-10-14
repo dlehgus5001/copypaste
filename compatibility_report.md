@@ -32,6 +32,8 @@ Wheel이 존재한다는 사실은 Python ABI에 맞는 배포물이 있다는 �
 
 ## 의존성 및 설치 과정
 
+기존 서버 라이브러리 재사용에는 `requirements.txt` / `requirements-build.txt`와 `scripts/check_existing_env.py`를 추가했다. 이 점검은 기존 버전·OpenCV 제공 패키지·framework CUDA build 및 기본 runtime 동작을 확인한다. 모두 있으면 설치하지 않고, 누락 시에는 pip의 실제 오프라인 전이 의존성 계획을 검토하여 기존 패키지를 교체하는 계획을 거부한다. 설치 후보는 기존 manifest의 wheel·SHA256과 일치해야 한다. 기존 환경의 CUDA 라이브러리가 Conda/OS로 제공될 수 있으므로 pip NVIDIA metadata 부재만으로 runtime이 부족하다고 판단하지 않는다. 대상 서버의 더 낮은 NumPy/OpenCV/TensorBoard 버전은 이번 재사용 경로의 범위 밖이며 별도 실행 검증이 필요하다.
+
 [`requirements-core.txt`](requirements-core.txt)는 수집 입력이고, 실제 폐쇄망 설치에는 SHA256을 포함해 모든 전이 의존성을 고정한 [`requirements-lock.txt`](requirements-lock.txt)를 사용한다. 고정 버전의 실제 실행 결과는 테스트 결과와 함께 판단해야 한다. 준비 환경과 다른 OS/아키텍처의 wheelhouse로 재사용하지 않는다.
 
 ### 필수 학습 패키지와 선택적 내보내기
