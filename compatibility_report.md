@@ -100,6 +100,12 @@ GPU의 원본 infinite sampler 및 prefetch queue 상태를 모두 저장하는 
 
 ## 변경 내역: 원본 수정 없이 외부 어댑터
 
+### 서버의 TensorBoard 2.16.2 고정 조건
+
+서버의 `tensorboard==2.16.2` constraint와 초기 `tensorboard>=2.20` 선언도 충돌했다. YOLOX의 scalar/event logging에는 이 높은 하한이 필요하지 않았다. 일반 학습 requirements를 `tensorboard>=2.16.2,<3`으로 수정하고, 보조 패키지 loguru/tqdm/thop/tabulate/psutil에서 근거 없이 높게 설정한 최소 버전을 제거했다. 알려진 서버 조건은 `constraints-existing-server.txt`에 NumPy 1.26.4 / TensorBoard 2.16.2 / OpenCV headless 4.11.0.86으로 정리했다.
+
+Python 3.12 및 torch 2.8.0+cu129 / torchvision 0.23.0+cu129를 유지하고, psutil 5.9.8 / tqdm 4.66.4 / loguru 0.7.2 / tabulate 0.9.0도 함께 적용한 별도 환경에서 **62 passed / 4 GPU skipped**를 확인했다. TensorBoard event 기록·재읽기, 두 학습 모드의 CPU epoch/backward/resume, worker 및 C++ 평가가 포함된다. TensorBoard 2.16.2 metadata가 요구하는 six도 로컬 wheel로 제공했다. THOP 모델 profiling, psutil memory reporting, loguru 파일 logging도 실제 실행했다. `reports/existing-server-compatibility.json`에 버전과 wheel SHA256을 기록했다. 이 결과를 다른 미검증 버전 조합이나 실제 GPU 실행으로 확대하지 않는다.
+
 | 위치 | 원본과 다른 부분 | 이유 |
 |---|---|---|
 | `src/offline_yolox/bootstrap.py` | vendored source 경로 활성화, URL이 아닌 로컬 파일 경로 확인 | 실행 중 clone/download 없이 고정 소스를 사용한다. |

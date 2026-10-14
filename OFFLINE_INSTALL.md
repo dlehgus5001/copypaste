@@ -8,6 +8,8 @@
 
 내부 환경에 `numpy==1.26.4` constraint가 있으면 `pip install --no-index --find-links=./wheelhouse -r requirement.txt -c constraints-numpy126.txt`를 사용하세요. 이 프로필은 NumPy 1.26.4 / OpenCV headless 4.11.0.86을 선택합니다. 기존 전체 51개 wheel의 `requirements-lock.txt`는 NumPy 2.5.4를 포함한 별도의 재현 프로필이므로 NumPy 1.26.4 고정 환경에 함께 적용하지 않습니다.
 
+`tensorboard==2.16.2`도 고정되어 있으면 대신 `-c constraints-existing-server.txt`를 사용합니다. NumPy 1.26.4 / TensorBoard 2.16.2 / OpenCV headless 4.11.0.86 조건을 함께 적용합니다. TensorBoard 2.16.2에는 `six` 등 전이 의존성이 필요하므로 부족한 로컬 wheel도 준비해야 합니다. 새로운 학습용 requirements는 기존 보조 라이브러리의 높은 최소 버전을 강제하지 않습니다.
+
 ## 준비 환경과 적용 범위
 
 이번 wheelhouse는 Debian 13 x86_64 / CPython 3.12에서 수집·검증했습니다. torch 2.8.0+cu129, torchvision 0.23.0+cu129와 모든 전이 의존성을 포함합니다. **묶음 전체는 glibc 2.31 이상**을 요구합니다. PyTorch wheel만의 최소값 2.28과 혼동하지 마세요. GPU·NVIDIA 커널 드라이버·Python 인터프리터 자체는 wheelhouse에 포함되지 않습니다.

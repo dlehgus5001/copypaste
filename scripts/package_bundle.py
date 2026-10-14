@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ENTRIES = [".gitignore", "pyproject.toml", "README.md", "OFFLINE_INSTALL.md",
            "environment_report.md", "compatibility_report.md", "TEST_REPORT.md",
            "requirement.txt", "requirements.txt", "constraints-numpy126.txt",
+           "constraints-existing-server.txt",
            "requirements-build.txt", "requirements-core.txt",
            "requirements-lock.txt", "wheelhouse-manifest.json",
            "src", "scripts", "configs", "tests", "reports", "third_party"]

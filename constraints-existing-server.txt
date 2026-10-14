@@ -1,0 +1,5 @@
+# Known server constraints reported during installation troubleshooting.
+numpy==1.26.4
+tensorboard==2.16.2
+# Compatible OpenCV for NumPy 1.x; frameworks retain the runtime requirements.
+opencv-python-headless==4.11.0.86

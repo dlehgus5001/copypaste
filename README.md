@@ -22,6 +22,14 @@ pip install -r requirement.txt -c constraints-numpy126.txt
 
 폐쇄망의 내부 저장소에 이 OpenCV 버전이 없으면 해당 wheel을 반입한 뒤 같은 명령에 `--no-index --find-links=./wheelhouse`를 추가하세요. Python 3.12·PyTorch 2.8·CUDA build 12.9 기준은 유지합니다.
 
+서버에서 **NumPy 1.26.4와 TensorBoard 2.16.2를 함께 고정**한 경우에는 두 조건을 포함한 프로필을 사용합니다. 서버의 constraint를 삭제하거나 TensorBoard를 올릴 필요는 없습니다.
+
+```bash
+pip install -r requirement.txt -c constraints-existing-server.txt
+```
+
+학습용 requirements에서 TensorBoard의 하한은 2.16.2로 조정했고, loguru/tqdm/tabulate/psutil 등의 불필요한 높은 하한은 제거했습니다. 기존 고정 버전을 재사용하되 실제 학습과 로그 기능은 해당 환경에서 점검해야 합니다. 정확한 51-package 재현용 lock은 별도이며, 기존 서버 고정 버전과 혼합해서 적용하지 않습니다.
+
 외부 저장소에 접근하지 않고 로컬 wheel에서만 설치하려면 다음과 같이 실행합니다. 이미 필요한 패키지가 모두 있으면 추가 wheel은 필요하지 않습니다.
 
 ```bash

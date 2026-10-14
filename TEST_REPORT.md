@@ -85,6 +85,14 @@ Preview를 명시적으로 호출하여 4개의 이미지, Box overlay, instance
 
 [`reports/numpy126-compatibility.json`](reports/numpy126-compatibility.json), [`reports/pytest-numpy126.xml`](reports/pytest-numpy126.xml)에 결과와 wheel 출처·SHA256을 저장했다. 내부 저장소에 OpenCV 4.11.0.86이 없으면 해당 로컬 wheel을 별도로 제공해야 한다. 원래 전체 wheelhouse의 NumPy 2.x lock을 이 NumPy 1.x constraint와 함께 사용하지 않는다.
 
+## TensorBoard 2.16.2 고정 서버 추가 검증
+
+NumPy 수정 후에도 서버의 TensorBoard 2.16.2 constraint가 높은 기존 하한(2.20)과 충돌했다. TensorBoard 하한을 2.16.2로 낮추고 보조 패키지의 불필요한 높은 하한도 제거했다. 이 해결은 서버 constraint 삭제나 NumPy/TensorBoard 업그레이드를 요구하지 않는다.
+
+Python 3.12.14 / torch 2.8.0+cu129 / torchvision 0.23.0+cu129 / NumPy 1.26.4 / OpenCV 4.11.0.86 / TensorBoard 2.16.2로 별도 환경을 구성했다. psutil 5.9.8, tqdm 4.66.4, loguru 0.7.2, tabulate 0.9.0, six 1.17.0도 공식 SHA256으로 확인한 로컬 wheel을 설치했다. 네트워크 차단 상태에서 `-r requirement.txt -c constraints-existing-server.txt`의 실제 pip dependency 해결과 전체 **62 passed, 4 GPU skipped, 0 failed**, 14.67초, exit 0을 확인했다. THOP profiling·psutil memory·loguru file logging도 별도로 통과했다.
+
+[`reports/existing-server-compatibility.json`](reports/existing-server-compatibility.json), [`reports/pytest-existing-server.xml`](reports/pytest-existing-server.xml)에 증거를 저장했다. GPU 및 실제 내부 서버의 추가 고정 버전 조합은 해당 서버에서 검증해야 한다. 전체 51-package baseline lock은 별도로 유지했다.
+
 ## 재사용 클라우드 설정
 
 설치 지침 `install_script`와 시작 지침 `start_skill`을 환경 설정 초안에 저장했습니다. 전체 저장 설치 script도 현재 머신에서 실행하여 exit 0을 확인했습니다. 현재 venv·wheel·소스 준비 상태와 초안 저장은 확인했으며, **환경 게시 및 새 작업에서의 복원은 아직 수행하지 않았습니다.** 환경 설정에서 변경 내용을 검토·저장한 뒤 환경을 게시해야 활성화됩니다. 운영 프로세스의 유지에 의존하는 설정은 없습니다.
