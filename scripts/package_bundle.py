@@ -13,7 +13,8 @@ import tarfile
 ROOT = Path(__file__).resolve().parents[1]
 ENTRIES = [".gitignore", "pyproject.toml", "README.md", "OFFLINE_INSTALL.md",
            "environment_report.md", "compatibility_report.md", "TEST_REPORT.md",
-           "requirement.txt", "requirements.txt", "requirements-build.txt", "requirements-core.txt",
+           "requirement.txt", "requirements.txt", "constraints-numpy126.txt",
+           "requirements-build.txt", "requirements-core.txt",
            "requirements-lock.txt", "wheelhouse-manifest.json",
            "src", "scripts", "configs", "tests", "reports", "third_party"]
 SKIP_DIRS = {"__pycache__", ".pytest_cache", "build", ".git"}

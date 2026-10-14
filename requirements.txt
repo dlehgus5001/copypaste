@@ -5,8 +5,10 @@
 # requirements-lock.txt instead. CUDA build 12.9 is checked at runtime.
 torch==2.8.0
 torchvision==0.23.0
-numpy>=2.2,<3
-opencv-python-headless>=4.12,<5
+# NumPy 1.26.4 can be fixed by the server's pip constraints.
+# OpenCV 4.11 supports it; pip can backtrack from newer NumPy-2-only wheels.
+numpy>=1.26.4,<3
+opencv-python-headless>=4.11,<5
 pycocotools>=2.0.11,<3
 loguru>=0.7,<1
 tqdm>=4.67,<5

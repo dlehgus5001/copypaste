@@ -1,0 +1,4 @@
+# Optional profile for servers which retain NumPy 1.26.4.
+# Core Python/PyTorch/CUDA versions are unchanged.
+numpy==1.26.4
+opencv-python-headless==4.11.0.86

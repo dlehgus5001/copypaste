@@ -32,7 +32,7 @@ Wheel이 존재한다는 사실은 Python ABI에 맞는 배포물이 있다는 �
 
 ## 의존성 및 설치 과정
 
-기존 서버 라이브러리 재사용에는 `requirements.txt` / `requirements-build.txt`와 `scripts/check_existing_env.py`를 추가했다. 이 점검은 기존 버전·OpenCV 제공 패키지·framework CUDA build 및 기본 runtime 동작을 확인한다. 모두 있으면 설치하지 않고, 누락 시에는 pip의 실제 오프라인 전이 의존성 계획을 검토하여 기존 패키지를 교체하는 계획을 거부한다. 설치 후보는 기존 manifest의 wheel·SHA256과 일치해야 한다. 기존 환경의 CUDA 라이브러리가 Conda/OS로 제공될 수 있으므로 pip NVIDIA metadata 부재만으로 runtime이 부족하다고 판단하지 않는다. 대상 서버의 더 낮은 NumPy/OpenCV/TensorBoard 버전은 이번 재사용 경로의 범위 밖이며 별도 실행 검증이 필요하다.
+기존 서버 라이브러리 재사용에는 `requirements.txt` / `requirements-build.txt`와 `scripts/check_existing_env.py`를 추가했다. 이 점검은 기존 버전·OpenCV 제공 패키지·framework CUDA build 및 기본 runtime 동작을 확인한다. 모두 있으면 설치하지 않고, 누락 시에는 pip의 실제 오프라인 전이 의존성 계획을 검토하여 기존 패키지를 교체하는 계획을 거부한다. 설치 후보는 기존 manifest의 wheel·SHA256과 일치해야 한다. 기존 환경의 CUDA 라이브러리가 Conda/OS로 제공될 수 있으므로 pip NVIDIA metadata 부재만으로 runtime이 부족하다고 판단하지 않는다. **NumPy 1.26.4 / OpenCV headless 4.11.0.86** 조합은 추가 실행 검증했으며 `constraints-numpy126.txt`로 선택할 수 있다. 그보다 낮은 버전이나 확인하지 않은 조합은 별도 실행 검증이 필요하다.
 
 [`requirements-core.txt`](requirements-core.txt)는 수집 입력이고, 실제 폐쇄망 설치에는 SHA256을 포함해 모든 전이 의존성을 고정한 [`requirements-lock.txt`](requirements-lock.txt)를 사용한다. 고정 버전의 실제 실행 결과는 테스트 결과와 함께 판단해야 한다. 준비 환경과 다른 OS/아키텍처의 wheelhouse로 재사용하지 않는다.
 
@@ -87,6 +87,8 @@ res.dataset['info'] = copy.deepcopy(self.dataset.get('info', {}))
 2.0.10의 확인한 wheel SHA256은 `4539d8b29230de042f574012edd0b5227528da083c4f12bbd6488567aabd3920`이고, 선택한 2.0.11 wheel SHA256은 `a82d1c9ed83f75da0b3f244f2a3cf559351a283307bd9b79a4ee2b93ab3231dd`이다. 이 문제는 원본 코드를 수정하지 않고 패키지 선택으로 해결했다.
 
 실제 **NumPy 2.5.4 / OpenCV headless 4.14.0.94 / pycocotools 2.0.11**에서 PNG mask 저장·로드, RLE encode/decode, bbox/area, NumPy↔Torch roundtrip이 통과했다. `mask.decode`에서 NumPy 2의 `__array__(copy=...)` 규약과 관련한 DeprecationWarning 1개를 관찰했다. 마스크, bbox, area의 값 비교는 모두 통과했으므로 실행 실패로 분류하지 않는다. 향후 NumPy 변경에서는 재검증이 필요하다.
+
+서버의 `numpy==1.26.4` constraint와 초기 `numpy>=2.2` 선언이 충돌한 실제 설치 오류를 확인했다. 일반 학습 requirements를 `numpy>=1.26.4,<3`, `opencv-python-headless>=4.11,<5`로 수정하고, NumPy 1.26.4 / OpenCV 4.11.0.86의 선택적 constraint를 제공한다. OpenCV 4.11 공식 metadata는 Python 3.12에서 NumPy>=1.26.0을 요구하므로 이 조합은 dependency 범위에 들어간다. Python 3.12·torch 2.8.0+cu129·torchvision 0.23.0+cu129를 유지한 별도 환경에서 네트워크 차단 설치·pip 해결 및 전체 **62 passed / 4 GPU skipped**를 확인했다. 공식 wheel SHA256과 결과는 `reports/numpy126-compatibility.json`에 기록했다. 전체 51-package lock과 wheelhouse는 기존 NumPy 2.5.4 재현 프로필로 유지한다.
 
 ### Checkpoint와 Resume의 범위
 

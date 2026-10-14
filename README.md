@@ -14,6 +14,14 @@ pip install -r requirement.txt
 
 `requirement.txt`는 `requirements.txt`를 불러오는 진입 파일이므로 두 이름 모두 같은 학습 의존성을 설치합니다. 조건을 만족하는 기존 패키지는 재사용합니다. 기존 버전을 변경하지 않거나 설치된 OpenCV 제공 패키지를 구분해야 한다면 아래 **기존 환경 사용**의 점검 절차를 사용하세요.
 
+서버에서 `numpy==1.26.4`를 고정한 경우에는 다음 호환 프로필을 사용합니다. NumPy는 그대로 유지하고 NumPy 1.x를 지원하는 OpenCV headless 4.11.0.86을 선택합니다. OpenCV 4.12 이상은 NumPy 2.x를 요구할 수 있으므로 버전을 함께 맞춰야 합니다.
+
+```bash
+pip install -r requirement.txt -c constraints-numpy126.txt
+```
+
+폐쇄망의 내부 저장소에 이 OpenCV 버전이 없으면 해당 wheel을 반입한 뒤 같은 명령에 `--no-index --find-links=./wheelhouse`를 추가하세요. Python 3.12·PyTorch 2.8·CUDA build 12.9 기준은 유지합니다.
+
 외부 저장소에 접근하지 않고 로컬 wheel에서만 설치하려면 다음과 같이 실행합니다. 이미 필요한 패키지가 모두 있으면 추가 wheel은 필요하지 않습니다.
 
 ```bash

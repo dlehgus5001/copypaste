@@ -15,11 +15,12 @@ SPEC.loader.exec_module(checker)
 
 
 def test_existing_gui_opencv_is_reused():
-    requirements = [checker.Requirement("numpy>=2.2,<3"),
-                    checker.Requirement("opencv-python-headless>=4.12,<5")]
+    requirements = [checker.Requirement("numpy>=1.26.4,<3"),
+                    checker.Requirement("opencv-python-headless>=4.11,<5")]
     adapted = checker.adapt_opencv(requirements, {"opencv-python": "4.13.0"})
     assert [req.name for req in adapted] == ["numpy", "opencv-python"]
     assert adapted[1].specifier.contains("4.13.0")
+    assert adapted[1].specifier.contains("4.11.0.86")
     assert not adapted[1].specifier.contains("4.8.0")
 
 

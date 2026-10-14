@@ -6,6 +6,8 @@
 
 `requirements.txt`는 학습용, `requirements-build.txt`는 선택적 빌드용입니다. 테스트용 pytest와 사용하지 않는 CMake, 별도 pip 업그레이드는 이 경로에서 요구하지 않습니다. `YOLOX_PYTHON`에 기존 환경의 Python을 지정하면 학습·평가·C++ 빌드 스크립트 모두 해당 인터프리터를 사용합니다. 기존 범위를 벗어난 버전은 대상에서 검증하기 전까지 호환된다고 가정하지 않습니다.
 
+내부 환경에 `numpy==1.26.4` constraint가 있으면 `pip install --no-index --find-links=./wheelhouse -r requirement.txt -c constraints-numpy126.txt`를 사용하세요. 이 프로필은 NumPy 1.26.4 / OpenCV headless 4.11.0.86을 선택합니다. 기존 전체 51개 wheel의 `requirements-lock.txt`는 NumPy 2.5.4를 포함한 별도의 재현 프로필이므로 NumPy 1.26.4 고정 환경에 함께 적용하지 않습니다.
+
 ## 준비 환경과 적용 범위
 
 이번 wheelhouse는 Debian 13 x86_64 / CPython 3.12에서 수집·검증했습니다. torch 2.8.0+cu129, torchvision 0.23.0+cu129와 모든 전이 의존성을 포함합니다. **묶음 전체는 glibc 2.31 이상**을 요구합니다. PyTorch wheel만의 최소값 2.28과 혼동하지 마세요. GPU·NVIDIA 커널 드라이버·Python 인터프리터 자체는 wheelhouse에 포함되지 않습니다.

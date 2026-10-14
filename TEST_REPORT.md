@@ -77,6 +77,14 @@ Preview를 명시적으로 호출하여 4개의 이미지, Box overlay, instance
 
 별도의 가상환경에서 loguru만 없는 상태를 만들고, **loguru wheel 한 개(61,595 bytes)**만 제공했습니다. 점검·설치 계획이 loguru 한 개만 선택했고, 네트워크 차단 상태의 설치 뒤 기존 모든 패키지 버전이 그대로임을 확인했습니다. 전체 wheelhouse 또는 CUDA 패키지 재설치가 필요하지 않았습니다. [`reports/existing-env-missing-only-validation.json`](reports/existing-env-missing-only-validation.json)에 기록했습니다. 실제 내부 서버의 버전 조합과 GPU는 여전히 해당 장비에서 검증해야 합니다.
 
+## NumPy 1.26.4 고정 서버 호환성 추가 검증
+
+서버가 `numpy==1.26.4`를 constraint로 고정한 상황에서 초기 requirements의 NumPy>=2.2가 충돌했다. NumPy 하한을 조정하고 `constraints-numpy126.txt`에 NumPy 1.26.4 / OpenCV headless 4.11.0.86을 고정해 해결했다. 기존 준비 환경의 NumPy 2.5.4나 Python/PyTorch 버전은 변경하지 않았다.
+
+추가 환경은 Python 3.12.14 / torch 2.8.0+cu129 / torchvision 0.23.0+cu129 / NumPy 1.26.4 / OpenCV 4.11.0.86 / pycocotools 2.0.11이다. 공식 SHA256을 확인한 wheel을 네트워크 차단 상태에서 설치했고, `-r requirement.txt -c constraints-numpy126.txt`의 실제 pip dependency 해결을 확인했다. 이어서 **62 passed, 4 GPU skipped, 0 failed, 11 warnings**, 14.06초, exit 0으로 전체 테스트를 완료했다. Original/Online 학습·backward·checkpoint 재개, fork/spawn worker, 표준/C++ COCO 평가까지 포함한다. GPU는 계속 미검증이다.
+
+[`reports/numpy126-compatibility.json`](reports/numpy126-compatibility.json), [`reports/pytest-numpy126.xml`](reports/pytest-numpy126.xml)에 결과와 wheel 출처·SHA256을 저장했다. 내부 저장소에 OpenCV 4.11.0.86이 없으면 해당 로컬 wheel을 별도로 제공해야 한다. 원래 전체 wheelhouse의 NumPy 2.x lock을 이 NumPy 1.x constraint와 함께 사용하지 않는다.
+
 ## 재사용 클라우드 설정
 
 설치 지침 `install_script`와 시작 지침 `start_skill`을 환경 설정 초안에 저장했습니다. 전체 저장 설치 script도 현재 머신에서 실행하여 exit 0을 확인했습니다. 현재 venv·wheel·소스 준비 상태와 초안 저장은 확인했으며, **환경 게시 및 새 작업에서의 복원은 아직 수행하지 않았습니다.** 환경 설정에서 변경 내용을 검토·저장한 뒤 환경을 게시해야 활성화됩니다. 운영 프로세스의 유지에 의존하는 설정은 없습니다.
