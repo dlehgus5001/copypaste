@@ -5,6 +5,11 @@ import copy
 
 def add_composition_arguments(parser):
     group = parser.add_argument_group("online composition")
+    group.add_argument("--asset-root", help="Common root for local object, mask and background folders")
+    group.add_argument("--objects-dir", help="Recursively read object images from this folder under asset-root")
+    group.add_argument("--masks-dir", help="Pair masks by relative subfolder and filename stem")
+    group.add_argument("--backgrounds-dir", help="Recursively read background images without a manifest")
+    group.add_argument("--mask-suffix", help="Optional suffix before the mask extension (default: same stem)")
     group.add_argument("--objects-per-image", type=int,
                        help="Request this fixed number of objects per composite")
     sizes = group.add_mutually_exclusive_group()
@@ -21,7 +26,8 @@ def add_composition_arguments(parser):
 def composition_config(config, args):
     """Apply overrides to a copy so checkpoints record the effective settings."""
     values = copy.deepcopy(config)
-    names = ("objects_per_image", "object_size", "object_size_range",
+    names = ("asset_root", "objects_dir", "masks_dir", "backgrounds_dir", "mask_suffix",
+             "objects_per_image", "object_size", "object_size_range",
              "unique_objects", "require_object_count")
     if not any(getattr(args, name, None) is not None for name in names):
         return values
@@ -30,6 +36,16 @@ def composition_config(config, args):
     if not isinstance(values.get("copy_paste"), dict):
         raise ValueError("Online mode requires a copy_paste configuration object")
     settings = values["copy_paste"]
+    for name in ("asset_root", "objects_dir", "masks_dir", "backgrounds_dir", "mask_suffix"):
+        value = getattr(args, name, None)
+        if value is not None:
+            if name != "mask_suffix" and not value.strip():
+                raise ValueError(f"--{name.replace('_', '-')} must be a nonempty local path")
+            settings[name] = value
+    if getattr(args, "objects_dir", None) is not None or getattr(args, "masks_dir", None) is not None:
+        settings.pop("objects_manifest", None)
+    if getattr(args, "backgrounds_dir", None) is not None:
+        settings.pop("backgrounds_manifest", None)
     count = getattr(args, "objects_per_image", None)
     if count is not None:
         if count < 0:

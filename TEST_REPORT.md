@@ -118,6 +118,14 @@ Python 3.12.14 / torch 2.8.0+cu129 / torchvision 0.23.0+cu129 / NumPy 1.26.4 / O
 
 실제 Python CLI로 샘플 4장을 16~24픽셀 객체 5개씩 합성하여 표준 COCO annotation 20개와 학습 설정을 생성했다. 이어 생성된 설정으로 Original CPU 2 epochs 학습과 COCO 평가를 완료했다. [`reports/synthetic-export-validation.json`](reports/synthetic-export-validation.json)에 결과를 기록했다. 출력 파일은 로컬 `outputs/synthetic-five-objects/`에 있고 Git에는 포함하지 않는다. export는 기존 검증 이미지·annotation의 경로를 참조하며 검증 데이터를 복제하거나 학습 이미지로 대체하지 않는다. GPU 학습 검증은 수행하지 못했다.
 
+## 객체·마스크 폴더 자동 탐색 추가 검증
+
+2026-10-15, 같은 서버 호환 환경에서 전체 **106 passed, 4 GPU skipped, 0 failed, 13 warnings**, 45.44초를 확인했다. 결과는 [`reports/pytest-folder-inputs.xml`](reports/pytest-folder-inputs.xml)에 있다.
+
+새 테스트 19개는 PNG 객체·마스크를 같은 상대 하위 폴더와 파일명으로 연결하고, 여러 폴더에 같은 `001.png`가 있어도 올바르게 구분함을 확인했다. 확장자·선택적 마스크 접미사, 단일/다중 클래스 매핑, 누락·중복 마스크와 잘못된 경로도 검사했다. Manifest가 없는 폴더만으로 strict 5개 합성, 실제 CPU 1 epoch와 기존 COCO 검증, 다른 작업 폴더에서의 Python CLI 실행을 통과했다. 입력 파일의 SHA256은 변하지 않았고 파일 목록 JSON이나 합성 이미지 저장도 없었다.
+
+별도 실제 CLI 실행에서도 객체 폴더 5개와 대응 PNG 마스크 5개, 배경 4개를 사용해 CPU 1 epoch(8 images / 4 iterations)를 완료했다. 객체 수 5개와 16~24픽셀 크기 설정이 checkpoint에 반영됐고 입력 폴더에 JSON이 생성되지 않았음을 확인했다. [`reports/folder-input-validation.json`](reports/folder-input-validation.json)에 경로와 실행 결과를 기록했다. `configs/online_folders.json`이 폴더 방식 예제이며 기존 Manifest 입력도 유지한다. 공식 YOLOX 원본 170개 파일의 hash는 그대로다. GPU 학습은 이번 준비 머신에서 검증하지 못했다.
+
 ## 재사용 클라우드 설정
 
 설치 지침 `install_script`와 시작 지침 `start_skill`을 환경 설정 초안에 저장했습니다. 전체 저장 설치 script도 현재 머신에서 실행하여 exit 0을 확인했습니다. 현재 venv·wheel·소스 준비 상태와 초안 저장은 확인했으며, **환경 게시 및 새 작업에서의 복원은 아직 수행하지 않았습니다.** 환경 설정에서 변경 내용을 검토·저장한 뒤 환경을 게시해야 활성화됩니다. 운영 프로세스의 유지에 의존하는 설정은 없습니다.

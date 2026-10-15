@@ -2,6 +2,7 @@
 wheelhouse/
 .pip-cache/
 data/sample/
+data/assets/
 artifacts/
 outputs/
 __pycache__/

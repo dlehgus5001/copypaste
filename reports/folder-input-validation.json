@@ -1,0 +1,89 @@
+{
+  "scope": "PNG object/mask folders; CPU diagnostic only, no GPU validation",
+  "objects": [
+    {
+      "image": "object/object_01/001.png",
+      "mask": "mask/object_01/001.png",
+      "category_id": 1
+    },
+    {
+      "image": "object/object_02/001.png",
+      "mask": "mask/object_02/001.png",
+      "category_id": 1
+    },
+    {
+      "image": "object/object_03/001.png",
+      "mask": "mask/object_03/001.png",
+      "category_id": 1
+    },
+    {
+      "image": "object/object_04/001.png",
+      "mask": "mask/object_04/001.png",
+      "category_id": 1
+    },
+    {
+      "image": "object/object_05/001.png",
+      "mask": "mask/object_05/001.png",
+      "category_id": 1
+    }
+  ],
+  "backgrounds": [
+    "background/001.png",
+    "background/002.png",
+    "background/003.png",
+    "background/004.png"
+  ],
+  "paired_objects": 5,
+  "background_count": 4,
+  "input_files_unchanged": true,
+  "asset_json_files": [],
+  "objects_per_image": 5,
+  "object_long_side_range": [
+    16,
+    24
+  ],
+  "training": {
+    "workflow": "cpu_diagnostic",
+    "native_cuda_trainer": false,
+    "device": "cpu",
+    "start_epoch": 0,
+    "completed_epochs": 1,
+    "epochs": [
+      {
+        "epoch": 1,
+        "iterations": 4,
+        "images": 8,
+        "mean_loss": 10.924457311630249,
+        "losses": [
+          10.985389709472656,
+          10.981120109558105,
+          10.948406219482422,
+          10.782913208007812
+        ],
+        "evaluation": {
+          "ap50_95": 0.0,
+          "ap50": 0.0,
+          "images": 4,
+          "detections": 0,
+          "backend": "standard",
+          "stats": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -1.0,
+            -1.0
+          ],
+          "summary": "Running per image evaluation...\nEvaluate annotation type *bbox*\nDONE (t=0.00s).\nAccumulating evaluation results...\nDONE (t=0.00s).\n Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = -1.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = -1.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = -1.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = -1.000\n"
+        }
+      }
+    ],
+    "checkpoint": "/workspace/copypaste/outputs/folder-input-demo/five_objects/latest_ckpt.pth"
+  }
+}

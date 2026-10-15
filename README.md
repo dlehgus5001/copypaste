@@ -48,7 +48,7 @@ python run.py train --mode online --config configs/online.json --device cuda \
   --objects-per-image 5 --object-size-range 16 24 --require-object-count
 ```
 
-위 학습 명령은 이미지마다 객체 **5개**를 새로 합성하고 크기를 **16~24픽셀**에서 선택합니다. 합성 이미지와 정답 박스·클래스를 메모리에서 바로 모델에 전달하므로 **합성 이미지나 학습용 COCO JSON을 미리 만들거나 저장할 필요가 없습니다.** 모델 checkpoint와 학습 로그는 `outputs/online/<exp_name>/`에 저장합니다. 기존 검증용 COCO annotation과 객체·배경 manifest는 입력으로 필요합니다.
+위 학습 명령은 샘플 이미지마다 객체 **5개**를 새로 합성하고 크기를 **16~24픽셀**에서 선택합니다. 합성 이미지와 정답 박스·클래스를 메모리에서 바로 모델에 전달하므로 **합성 이미지나 학습용 COCO JSON을 미리 만들거나 저장할 필요가 없습니다.** 모델 checkpoint와 학습 로그는 `outputs/online/<exp_name>/`에 저장합니다. 기존 검증용 COCO annotation은 입력으로 필요합니다.
 
 학습 횟수는 `configs/online.json`의 `max_epoch`, EPOCH당 합성할 이미지 분량은 `copy_paste.epoch_length`, 배치 크기는 `batch_size`에서 지정합니다. 객체 크기는 회전 전 긴 변 기준이며 `--object-size 24`를 쓰면 24픽셀로 고정할 수 있습니다.
 
@@ -57,6 +57,38 @@ python run.py train --mode online --config configs/online.json --device cuda \
 각 명령의 옵션은 `python run.py --help`, `python run.py train --help` 등으로 확인합니다. `train --mode original`은 `configs/original.json`, `train --mode online`은 `configs/online.json`을 기본으로 사용합니다. `--config`로 다른 설정을 지정할 수 있으며, 명시한 `--mode`와 설정의 모드가 다르면 오류로 종료합니다. C++ 빌드에는 시스템의 `gcc`·`g++`가 필요하고, 학습·평가 등의 네트워크 차단 실행에는 Linux의 `libseccomp`가 필요합니다.
 
 GPU가 없는 머신은 두 학습·평가 명령의 `cuda`를 `cpu`로 바꾸어 진단합니다. 별도 venv와 전체 wheelhouse는 아래처럼 새 환경을 완전히 재현할 때 사용하는 경로입니다.
+
+## 내 객체·마스크 폴더로 합성 학습
+
+`manifest.json`을 직접 작성할 필요 없이 아래처럼 파일을 넣으세요. 객체와 마스크는 **같은 하위 폴더 경로와 파일명**으로 연결합니다. 각 폴더에 여러 PNG를 넣어도 됩니다.
+
+```text
+data/assets/
+  object/
+    type1/001.png
+    type2/001.png
+    type3/001.png
+    type4/001.png
+    type5/001.png
+  mask/
+    type1/001.png
+    type2/001.png
+    type3/001.png
+    type4/001.png
+    type5/001.png
+  background/
+    bg_001.png
+    bg_002.png
+```
+
+```bash
+python run.py train --mode online --config configs/online_folders.json --device cuda \
+  --objects-per-image 5 --object-size-range 16 24 --require-object-count
+```
+
+이 설정은 `data/assets/object`, `mask`, `background`를 하위 폴더까지 자동으로 읽습니다. `object/type1/001.png`는 `mask/type1/001.png`와 한 세트입니다. 마스크는 객체 이미지와 같은 크기의 단일 채널 이진 이미지로, 객체는 흰색(255), 나머지는 검정(0)으로 준비하세요. 대응하는 마스크가 없거나 후보가 여러 개이면 학습 전에 오류로 알립니다.
+
+`configs/online_folders.json`에서 `max_epoch`, `batch_size`, `copy_paste.epoch_length`를 바꾸면 학습 횟수와 배치 크기, EPOCH당 이미지 분량을 조절합니다. 이 파일은 작은 샘플 모델·입력 크기와 `data/sample`의 검증 데이터를 사용하므로, 실제 학습에서는 `data_dir`·`num_classes`·모델 설정도 맞추세요. 검증 클래스가 하나라면 위 5개 폴더의 객체는 모두 같은 클래스입니다. 5개 객체는 전체 파일 목록에서 랜덤으로 선택하며, 폴더마다 하나씩 선택하는 규칙은 아닙니다. 폴더별 클래스 지정과 경로 변경은 [configs/ONLINE_DATA.md](configs/ONLINE_DATA.md)를 참고하세요.
 
 ## 새 환경의 오프라인 설치 묶음 준비
 
@@ -163,15 +195,9 @@ python run.py evaluate --config configs/original.json --device cuda \
 
 ## 온라인 합성 데이터
 
-데이터 계약과 모든 합성 옵션은 [configs/ONLINE_DATA.md](configs/ONLINE_DATA.md)를 따릅니다. 핵심 입력은 다음과 같습니다.
+데이터 계약과 모든 합성 옵션은 [configs/ONLINE_DATA.md](configs/ONLINE_DATA.md)를 따릅니다. 폴더 자동 수집은 `configs/online_folders.json`의 `copy_paste.objects_dir`, `masks_dir`, `backgrounds_dir`를 사용합니다. 상대 경로는 `copy_paste.asset_root` 기준입니다. 기존 샘플 설정 `configs/online.json`의 manifest 입력도 계속 지원합니다.
 
-```json
-[
-  {"image": "objects/car.png", "mask": "objects/car_mask.png", "category_id": 1}
-]
-```
-
-객체 manifest와 배경 manifest의 상대 경로 기준은 `asset_root`입니다. 배경 manifest는 이미지 경로 문자열의 배열입니다. COCO category ID를 사용하고 내부 YOLOX label index로 변환합니다. Online 학습은 결과를 메모리에서 생성하여 바로 DataLoader에 전달하며 합성 이미지와 annotation JSON을 저장하지 않습니다. 선택 도구인 `preview`는 눈으로 확인할 이미지·bbox·mask·Metadata JSON을, `export`는 데이터셋 반출용 이미지와 표준 COCO annotation JSON을 저장합니다. 저장 도구의 사용법은 [configs/ONLINE_DATA.md](configs/ONLINE_DATA.md)를 참고하세요.
+Online 학습은 결과를 메모리에서 생성하여 바로 DataLoader에 전달하며 합성 이미지와 annotation JSON을 저장하지 않습니다. 클래스는 기존 검증용 COCO category ID를 사용하고 내부 YOLOX label index로 변환합니다. 선택 도구인 `preview`는 눈으로 확인할 이미지·bbox·mask·Metadata JSON을, `export`는 데이터셋 반출용 이미지와 표준 COCO annotation JSON을 저장합니다. 저장 도구의 사용법은 [configs/ONLINE_DATA.md](configs/ONLINE_DATA.md)를 참고하세요.
 
 객체 수는 `copy_paste.object_count: [5, 5]`, 크기는 `object_long_side_range: [16, 24]`로 설정할 수 있습니다. 범위 방식과 기존 `object_long_side_pixels`/`object_size_weights` 방식은 함께 지정하지 않습니다. 명령의 `--objects-per-image`, `--object-size`, `--object-size-range`로 해당 실행에만 값을 바꿀 수도 있습니다. 기본 Online 설정은 객체 5개를 요구하며 `require_object_count: true`로 부족한 개수의 합성 결과를 거부합니다. `unique_objects: false`이면 같은 객체·마스크 세트의 중복 선택을 허용합니다.
 

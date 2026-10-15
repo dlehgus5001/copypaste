@@ -2,9 +2,78 @@
 
 `configs/online.json`은 기능 확인용 작은 샘플 설정이다. 샘플 객체는 직접 생성한 도형이며 SAM3 출력이나 실제 항공 영상이 아니다. SAM3 추론은 학습 중 실행하지 않는다. 실제 서버에서는 사전에 추출한 객체 이미지·마스크와 객체가 없는 항공뷰 배경을 로컬로 제공한다.
 
-`data_dir`에는 평가용 COCO 데이터의 `annotations/<val_ann>`과 `<val_name>` 이미지가 필요하다. Online 모드는 Original 모드의 COCO 학습 Annotation이나 학습 이미지를 요구하지 않는다. `num_classes`는 검증 COCO의 클래스 개수와 일치해야 한다. 객체 Manifest의 `category_id`는 그 COCO taxonomy의 ID다. 비연속 ID도 오름차순으로 정렬해 모델의 0부터 시작하는 클래스 인덱스로 변환한다.
+`data_dir`에는 평가용 COCO 데이터의 `annotations/<val_ann>`과 `<val_name>` 이미지가 필요하다. Online 모드는 Original 모드의 COCO 학습 Annotation이나 학습 이미지를 요구하지 않는다. `num_classes`는 검증 COCO의 클래스 개수와 일치해야 한다. 객체의 클래스 ID는 그 COCO taxonomy의 ID다. 비연속 ID도 오름차순으로 정렬해 모델의 0부터 시작하는 클래스 인덱스로 변환한다.
 
-`copy_paste.asset_root`는 객체와 배경의 공통 로컬 루트다. 설정 파일의 루트 경로는 프로젝트 루트 기준이고, Manifest 및 Manifest 내부 이미지 경로는 `asset_root` 기준이다. 루트 밖으로 나가는 경로나 URL은 거부한다. 예:
+## 폴더에서 자동으로 읽기
+
+`manifest.json`을 작성하지 않고 객체 폴더와 마스크 폴더를 지정할 수 있다. `configs/online_folders.json`은 이 방식의 예제다. 파일은 다음처럼 배치한다.
+
+```text
+data/assets/
+  object/
+    type1/001.png
+    type2/001.png
+    type3/001.png
+    type4/001.png
+    type5/001.png
+  mask/
+    type1/001.png
+    type2/001.png
+    type3/001.png
+    type4/001.png
+    type5/001.png
+  background/
+    bg_001.png
+    bg_002.png
+```
+
+`configs/online_folders.json`의 `copy_paste`에는 다음 경로가 들어 있다. 기존의 다른 합성 설정은 유지한다.
+
+```json
+{
+  "asset_root": "data/assets",
+  "objects_dir": "object",
+  "masks_dir": "mask",
+  "backgrounds_dir": "background"
+}
+```
+
+`asset_root`의 상대 경로는 프로젝트 루트 기준이다. 각 폴더의 상대 경로는 `asset_root` 기준이며, 절대 경로를 쓰더라도 `asset_root` 안에 있어야 한다. 객체와 마스크 폴더는 서로 겹치지 않게 분리한다. 폴더는 재귀적으로 읽으므로 하위 폴더에 여러 파일을 넣을 수 있다. `object/001.png`와 `mask/001.png`처럼 하위 폴더 없이 넣어도 된다.
+
+매칭 기준은 **객체 폴더 아래의 상대 하위 폴더와 확장자를 제외한 파일명**이다. 예를 들어 `object/type1/001.png`는 `mask/type1/001.png`와 연결한다. 확장자가 다른 `object/type1/001.jpg`와 `mask/type1/001.png`도 연결할 수 있다. 지원 확장자는 PNG, JPG/JPEG, BMP, TIF/TIFF, WEBP다. 파일 목록은 정렬해서 읽고, 객체의 대응 마스크가 없거나 여러 개이면 학습 전에 오류로 알린다. 객체 폴더의 같은 위치에 `001.png`와 `001.jpg`를 함께 두는 경우도 중복으로 거부한다. 대응 객체가 없는 여분의 마스크는 사용하지 않는다.
+
+```bash
+python run.py train --mode online --config configs/online_folders.json --device cuda \
+  --objects-per-image 5 --object-size-range 16 24 --require-object-count
+```
+
+이 명령은 매 이미지에 객체 5개를 합성하며 합성 이미지와 학습용 COCO JSON을 저장하지 않는다. 모델 checkpoint와 학습 로그는 저장한다. 전체 객체·마스크 목록에서 랜덤 선택하므로 **5개 폴더에서 하나씩 선택한다는 뜻은 아니다.** 같은 세트의 중복 선택을 막으려면 `--unique-objects`를 추가하고 세트를 5개 이상 준비한다.
+
+이 예제는 샘플과 같은 작은 모델·128×128 입력·2 EPOCH 설정이다. 총 학습 횟수는 `max_epoch`, 배치 크기는 `batch_size`, EPOCH당 생성 분량은 `copy_paste.epoch_length`에서 바꾼다. 실제 학습 시 `data_dir`, `num_classes`, 입력 크기와 모델 크기도 맞춘다. 예제의 `data_dir: "data/sample"`은 이미 생성한 샘플 검증 데이터를 참조하므로, 해당 데이터가 없으면 실제 검증 데이터 경로를 지정하거나 `python run.py sample-data`로 샘플을 먼저 준비한다.
+
+폴더 경로는 실행 옵션으로도 바꿀 수 있다. 원래 JSON 파일은 수정하지 않는다.
+
+```bash
+python run.py train --mode online --config configs/online_folders.json --device cuda \
+  --asset-root /data/assets --objects-dir object --masks-dir mask \
+  --backgrounds-dir background --objects-per-image 5 --object-size 24
+```
+
+기본 마스크 이름은 객체와 같으며, `001.png`에 대응하는 마스크가 `001_mask.png`라면 JSON에 `"mask_suffix": "_mask"`를 추가하거나 `--mask-suffix _mask`를 지정한다.
+
+검증 클래스가 하나면 폴더 이름과 관계없이 모든 객체에 그 클래스 ID를 지정한다. 따라서 위의 `type1`~`type5`는 5개 클래스를 의미하지 않는다. 클래스가 여러 개면 객체 폴더 바로 아래의 첫 하위 폴더 이름을 검증 COCO의 클래스 이름 또는 category ID로 지정한다. 예를 들어 검증 클래스가 `car`(ID 7), `truck`(ID 29)이면 `object/car/001.png`와 `object/truck/001.png`를 사용하고 마스크 폴더도 같은 구조로 만든다. 기존 폴더 이름을 유지하려면 `copy_paste`에 매핑을 추가할 수 있다.
+
+```json
+"folder_categories": {"type1": 7, "type2": 29}
+```
+
+매핑의 키는 첫 하위 폴더 이름이고 값은 기존 검증 COCO에 등록된 category ID다. 모든 클래스 폴더가 해석 가능해야 하며 새 클래스를 자동으로 만들지는 않는다.
+
+## 기존 Manifest 입력 사용하기 — 선택 사항
+
+기존 `configs/online.json`은 샘플 Manifest를 읽는 방식으로 유지한다. 객체·마스크 폴더 입력을 지정하면 객체 Manifest보다 우선하고, 배경 폴더 입력을 지정하면 배경 Manifest보다 우선한다. 객체 폴더 방식에서는 `objects_dir`와 `masks_dir`를 둘 다 지정한다. 폴더 방식만 사용할 때는 `objects_manifest`와 `backgrounds_manifest`를 생략할 수 있다.
+
+Manifest 방식에서 `copy_paste.asset_root`는 객체와 배경의 공통 로컬 루트다. 설정 파일의 루트 경로는 프로젝트 루트 기준이고, Manifest 및 Manifest 내부 이미지 경로는 `asset_root` 기준이다. 루트 밖으로 나가는 경로나 URL은 거부한다. 객체 Manifest 예:
 
 ```json
 [
@@ -13,13 +82,15 @@
 ]
 ```
 
-객체 이미지는 uint8 3채널 컬러 이미지 또는 4채널 PNG다. 4채널 이미지의 alpha 대신 별도 Mask를 사용한다. Mask는 이미지와 같은 높이·폭의 uint8 단일 채널 이진 이미지다. 0은 배경, 1 또는 255는 전경이며 비어 있거나 중간 회색 값이 있으면 거부한다. 설정 초기화 때 모든 파일의 존재 여부, 디코딩, Mask 정합성, category를 검사한다. SAM3의 연속 확률 Mask는 신뢰할 수 있는 임곗값으로 별도 이진화한 뒤 제공한다.
-
 배경 Manifest는 다음과 같은 로컬 경로 배열이다. 배경은 `input_size`의 높이·폭으로 크기를 변경하므로 실제 배경은 같은 종횡비로 준비하는 것을 권장한다. 이미 있는 객체를 배경에 포함하면 그 객체는 합성 label에 포함되지 않는다.
 
 ```json
 ["backgrounds/aerial_001.png", "backgrounds/aerial_002.png"]
 ```
+
+## 이미지·마스크와 합성 설정
+
+폴더 입력과 Manifest 입력 모두 같은 이미지 조건을 사용한다. 객체 이미지는 uint8 3채널 컬러 이미지 또는 4채널 PNG다. 4채널 이미지의 alpha 대신 별도 Mask를 사용한다. Mask는 이미지와 같은 높이·폭의 uint8 단일 채널 이진 이미지다. 0은 배경, 1 또는 255는 전경이며 비어 있거나 중간 회색 값이 있으면 거부한다. 설정 초기화 때 모든 파일의 존재 여부, 디코딩, Mask 정합성, category를 검사한다. SAM3의 연속 확률 Mask는 신뢰할 수 있는 임곗값으로 별도 이진화한 뒤 제공한다. 배경은 `input_size`의 높이·폭으로 크기를 변경하므로 같은 종횡비로 준비하는 것을 권장한다. 배경에 원래 있던 객체는 합성 label에 포함되지 않는다.
 
 `epoch_length`는 한 Epoch에서 생성할 합성 샘플 수다. 각 Dataset 호출은 같은 index여도 새 배경·객체·크기·각도·위치를 선택한다. Native Trainer는 공식 `InfiniteSampler`를 사용하고 한 Epoch의 iteration 수는 `ceil(epoch_length / batch_size)`다. 마지막 배치 크기까지 일정하므로 필요하면 `epoch_length`를 `batch_size`의 배수로 둔다. CPU 진단은 유한 Sampler로 정확히 `epoch_length`개를 소비한다. Online 모드에는 Mosaic/MixUp을 추가하지 않는다. 모델, Loss, SGD, Scheduler, EMA와 실제 COCO 검증은 Original 모드와 공유한다.
 
@@ -31,7 +102,7 @@
 
 실측 항공영상 크기 분포를 사용할 때는 학습 입력 해상도에서 측정한 긴 변 길이와 발생 빈도를 목록·가중치에 지정하고 `distribution_source`에 출처를 기록한다. 현재 샘플 크기는 기능 확인용이며 실제 항공 크기 분포라고 주장하지 않는다. Native multiscale을 활성화하면 합성 후 학습 입력 변경에 따라 Box와 객체 크기도 비례해 변한다. 지정한 pixels 기준을 유지하려면 `multiscale_range: 0`을 사용한다.
 
-`object_count`는 이미지 한 장에 넣을 최소·최대 객체 수다. `[5, 5]`이면 5개를 요청한다. `unique_objects: false`이면 같은 객체 이미지·마스크 세트를 여러 번 선택할 수 있고, `true`이면 한 이미지에서 서로 다른 세트를 선택한다. 서로 다른 클래스만 선택한다는 뜻은 아니다. `true`일 때는 요청한 수 이상의 세트를 Manifest에 준비해야 한다.
+`object_count`는 이미지 한 장에 넣을 최소·최대 객체 수다. `[5, 5]`이면 5개를 요청한다. `unique_objects: false`이면 같은 객체 이미지·마스크 세트를 여러 번 선택할 수 있고, `true`이면 한 이미지에서 서로 다른 세트를 선택한다. 서로 다른 클래스만 선택한다는 뜻은 아니다. `true`일 때는 요청한 수 이상의 세트를 폴더 또는 Manifest에 준비해야 한다.
 
 기본 설정의 `require_object_count: true`는 요청한 개수를 만족하는 이미지만 반환한다. 각 객체는 `placement_attempts`만큼 배치를 시도하고, 개수를 채우지 못하면 전체 이미지를 다시 합성한다. 전체 시도 한도인 `composition_attempts`는 기본 20이다. 한도를 모두 사용하면 부족한 객체 수로 학습하는 대신 오류로 종료한다. 객체 크기·개수·가림 제한을 조정해서 해결한다. `require_object_count: false`에서는 배치 실패한 객체를 생략할 수 있고, 요청 수와 실제 수를 Metadata에 기록한다.
 
@@ -43,17 +114,17 @@
 
 ```bash
 # 매 이미지에 5개, 객체 긴 변 16~24픽셀로 랜덤 합성하면서 학습
-python run.py train --mode online --device cuda \
+python run.py train --mode online --config configs/online_folders.json --device cuda \
   --objects-per-image 5 --object-size-range 16 24 --require-object-count
 
 # 크기 24픽셀 고정, 서로 다른 객체·마스크 세트 5개로 미리보기
-python run.py preview --config configs/online.json --output outputs/preview --count 4 \
+python run.py preview --config configs/online_folders.json --output outputs/preview --count 4 \
   --objects-per-image 5 --object-size 24 --unique-objects --require-object-count
 ```
 
 Preview는 PNG, Box overlay, 각 instance의 최종 Mask와 Metadata JSON을 내보낸다. `--unique-objects`를 사용하려면 객체 세트를 요청한 개수 이상 준비한다. 기존 파일을 보호하기 위해 Preview 출력 폴더는 비어 있어야 한다. `--no-unique-objects`와 `--no-require-object-count`로 JSON의 해당 옵션을 명시적으로 끌 수 있다. CLI로 바꾼 설정도 checkpoint에 기록되므로 Online 학습을 `--resume`으로 재개할 때는 같은 합성 옵션을 함께 지정한다.
 
-Online 학습은 위의 `train --mode online` 명령만 실행하면 된다. 합성 이미지와 annotation JSON은 저장하지 않으며, 정답 박스·클래스는 메모리에서 자동 생성한다. `max_epoch`는 총 EPOCH, `copy_paste.epoch_length`는 EPOCH당 합성 이미지 분량, `batch_size`는 한 번에 처리하는 이미지 수다. 기존 검증용 COCO JSON과 객체·배경 manifest는 입력으로 유지한다.
+Online 학습은 위의 `train --mode online` 명령만 실행하면 된다. 합성 이미지와 annotation JSON은 저장하지 않으며, 정답 박스·클래스는 메모리에서 자동 생성한다. `max_epoch`는 총 EPOCH, `copy_paste.epoch_length`는 EPOCH당 합성 이미지 분량, `batch_size`는 한 번에 처리하는 이미지 수다. 기존 검증용 COCO JSON은 입력으로 유지하며, 객체·배경은 폴더 또는 Manifest 중 선택한 방식으로 읽는다.
 
 합성 데이터를 다른 학습 작업에 반출할 때만 선택 도구인 `export`를 사용한다. Online 학습에 필요한 사전 단계는 아니다. Preview의 Metadata JSON과 달리 `annotations/instances_train2017.json`은 표준 COCO 형식이며 `images`, `annotations`, `categories`를 포함한다. 각 annotation의 `bbox`는 `[x, y, width, height]`, `area`는 최종 visible Mask의 전경 픽셀 수, `segmentation`은 같은 Mask의 COCO RLE다. 클래스 ID와 이름은 원래 검증 COCO의 category 매핑을 유지한다.
 

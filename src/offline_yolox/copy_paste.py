@@ -13,6 +13,7 @@ import numpy as np
 import torch
 
 from .bootstrap import local_path
+from .asset_discovery import discover_backgrounds, discover_objects
 from yolox.data.datasets.datasets_wrapper import Dataset
 
 
@@ -197,7 +198,18 @@ class OnlineCopyPasteDataset(Dataset):
     def _read_objects(self, name):
         result = []
         seen_sources = set()
-        for entry in self._read_manifest(name):
+        if "objects_dir" in self.config or "masks_dir" in self.config:
+            if "objects_dir" not in self.config or "masks_dir" not in self.config:
+                raise ValueError("Folder input requires both objects_dir and masks_dir")
+            entries = discover_objects(
+                self.asset_root, self.config["objects_dir"], self.config["masks_dir"],
+                self.class_ids, self.class_names,
+                mask_suffix=self.config.get("mask_suffix", ""),
+                folder_categories=self.config.get("folder_categories"),
+            )
+        else:
+            entries = self._read_manifest(name)
+        for entry in entries:
             if not isinstance(entry, dict) or not all(k in entry for k in ("image", "mask", "category_id")):
                 raise ValueError("Object entries require image, mask and category_id")
             category = entry["category_id"]
@@ -216,7 +228,9 @@ class OnlineCopyPasteDataset(Dataset):
 
     def _read_backgrounds(self, name):
         result = []
-        for entry in self._read_manifest(name):
+        entries = (discover_backgrounds(self.asset_root, self.config["backgrounds_dir"])
+                   if "backgrounds_dir" in self.config else self._read_manifest(name))
+        for entry in entries:
             path = self._asset_path(entry)
             self._read_image(path)
             result.append({"image": entry, "image_path": str(path)})
