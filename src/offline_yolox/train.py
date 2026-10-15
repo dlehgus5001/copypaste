@@ -9,7 +9,7 @@ import numpy as np
 import torch
 
 from .bootstrap import local_path
-from .experiment import create_exp, seed_everything
+from .experiment import create_exp, read_config, seed_everything
 
 
 def rng_state():
@@ -261,7 +261,9 @@ def build_cuda_trainer(exp, args):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", default="configs/original.json")
+    parser.add_argument("--mode", choices=("original", "online"),
+                        help="Select the default configuration; an explicit --config must match this mode")
+    parser.add_argument("--config", help="Local configuration (default: configs/<mode>.json, original if no mode given)")
     parser.add_argument("--device", choices=("cuda", "cpu"), default="cuda")
     parser.add_argument("--checkpoint", help="Local YOLOX checkpoint for fine tuning")
     parser.add_argument("--resume", help="Local checkpoint for an epoch-boundary resume")
@@ -271,11 +273,15 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if args.resume and args.checkpoint:
         parser.error("--resume and --checkpoint are mutually exclusive")
+    config = args.config or f"configs/{args.mode or 'original'}.json"
+    values = read_config(config)
+    if args.mode and values.get("mode", "original") != args.mode:
+        parser.error("--mode does not match the mode declared in --config")
     if args.device == "cuda" and not torch.cuda.is_available():
         raise RuntimeError("CUDA is unavailable. GPU training requires a CUDA GPU; --device cpu explicitly runs the diagnostic harness.")
     if args.device == "cpu" and args.fp16:
         parser.error("--fp16 requires CUDA")
-    exp = create_exp(args.config)
+    exp = create_exp(values)
     seed_everything(exp.seed)
     if args.device == "cpu":
         if args.cpu_threads <= 0:

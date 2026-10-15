@@ -93,6 +93,21 @@ Python 3.12.14 / torch 2.8.0+cu129 / torchvision 0.23.0+cu129 / NumPy 1.26.4 / O
 
 [`reports/existing-server-compatibility.json`](reports/existing-server-compatibility.json), [`reports/pytest-existing-server.xml`](reports/pytest-existing-server.xml)에 증거를 저장했다. GPU 및 실제 내부 서버의 추가 고정 버전 조합은 해당 서버에서 검증해야 한다. 전체 51-package baseline lock은 별도로 유지했다.
 
+## Python 직접 실행 추가 검증
+
+2026-10-15, 위 TensorBoard 2.16.2 / NumPy 1.26.4 환경에서 `run.py` 진입점을 추가한 뒤 전체 테스트를 실행했다.
+
+```bash
+.venv-server-check/bin/python scripts/no_network.py \
+  .venv-server-check/bin/python -m pytest -q --junitxml=reports/pytest-python-cli.xml
+```
+
+**66 passed, 4 GPU skipped, 0 failed, 11 warnings**, 38.12초, exit 0이다. [`reports/pytest-python-cli.xml`](reports/pytest-python-cli.xml)에 결과를 저장했다.
+
+추가한 4개 CLI 테스트는 환경 스크립트를 source하지 않고, `PYTHONPATH`를 제거하고, `YOLOX_PYTHON`에 존재하지 않는 경로를 넣은 상태에서 실행했다. 공백을 포함한 별도 작업 폴더에서 현재 인터프리터로 샘플 생성 → Original/Online 각각 CPU 1 epoch → 저장된 checkpoint로 COCO 평가 → 합성 미리보기를 완료했다. 각 모드는 학습 이미지 2개와 검증 이미지 1개를 사용했고 유한한 양의 loss, checkpoint, 평가 JSON 및 미리보기 파일을 확인했다. 현재 Python을 그대로 쓰는 환경 점검, 의존성 없이 읽는 최상위 도움말, 잘못된 모드 및 모드와 설정의 불일치 거부도 확인했다.
+
+`python run.py build`도 같은 인터프리터로 공식 `setup.py build_ext --inplace`와 FastCOCOEval 로드를 완료했다. 실제 명령에는 기존 seccomp 네트워크 차단이 적용된다. 공식 YOLOX 원본 170개 파일의 hash는 변하지 않았다. GPU 학습 검증은 여전히 대상 GPU 서버에서 수행해야 한다.
+
 ## 재사용 클라우드 설정
 
 설치 지침 `install_script`와 시작 지침 `start_skill`을 환경 설정 초안에 저장했습니다. 전체 저장 설치 script도 현재 머신에서 실행하여 exit 0을 확인했습니다. 현재 venv·wheel·소스 준비 상태와 초안 저장은 확인했으며, **환경 게시 및 새 작업에서의 복원은 아직 수행하지 않았습니다.** 환경 설정에서 변경 내용을 검토·저장한 뒤 환경을 게시해야 활성화됩니다. 운영 프로세스의 유지에 의존하는 설정은 없습니다.

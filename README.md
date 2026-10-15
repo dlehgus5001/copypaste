@@ -36,21 +36,28 @@ pip install -r requirement.txt -c constraints-existing-server.txt
 pip install --no-index --find-links=./wheelhouse -r requirement.txt
 ```
 
-설치 후 같은 Python으로 환경을 연결하고, 필요한 C++ 평가 확장을 빌드한 뒤 샘플을 실행합니다.
+설치 후 같은 Python으로 환경 점검, C++ 평가 확장 빌드, 샘플 생성과 학습을 실행합니다. `run.py`는 실행한 Python을 그대로 사용하며 프로젝트 경로와 실행 환경을 자동으로 설정하므로 `source scripts/env.sh`나 `YOLOX_PYTHON` 설정이 필요하지 않습니다.
 
 ```bash
-export YOLOX_PYTHON="$(python -c 'import sys; print(sys.executable)')"
-source scripts/env.sh
-python scripts/check_existing_env.py --include-build --output artifacts/installed-env
+python run.py check-env --include-build --output artifacts/installed-env
 # 빌드 도구가 부족할 때만 로컬 wheel로 설치
 # pip install --no-index --find-links=./wheelhouse -r requirements-build.txt
-bash scripts/build_yolox.sh
-python scripts/make_sample_data.py  # 기존 샘플이 있으면 생략
-bash scripts/train_original.sh --device cuda
-bash scripts/train_online.sh --device cuda
+python run.py build
+python run.py sample-data  # 기존 샘플이 있으면 생략
+python run.py train --mode original --device cuda
+python run.py preview --config configs/online.json --output outputs/preview --count 4
+python run.py train --mode online --device cuda
+python run.py evaluate --config configs/original.json --device cuda \
+  --checkpoint outputs/original/sample_nano/latest_ckpt.pth --evaluator fast \
+  --output outputs/original/evaluation.json
+python run.py evaluate --config configs/online.json --device cuda \
+  --checkpoint outputs/online/sample_nano/latest_ckpt.pth --evaluator fast \
+  --output outputs/online/evaluation.json
 ```
 
-GPU가 없는 머신은 두 학습 명령의 `cuda`를 `cpu`로 바꾸어 진단합니다. 별도 venv와 전체 wheelhouse는 아래처럼 새 환경을 완전히 재현할 때 사용하는 경로입니다.
+각 명령의 옵션은 `python run.py --help`, `python run.py train --help` 등으로 확인합니다. `train --mode original`은 `configs/original.json`, `train --mode online`은 `configs/online.json`을 기본으로 사용합니다. `--config`로 다른 설정을 지정할 수 있으며, 명시한 `--mode`와 설정의 모드가 다르면 오류로 종료합니다. C++ 빌드에는 시스템의 `gcc`·`g++`가 필요하고, 학습·평가 등의 네트워크 차단 실행에는 Linux의 `libseccomp`가 필요합니다.
+
+GPU가 없는 머신은 두 학습·평가 명령의 `cuda`를 `cpu`로 바꾸어 진단합니다. 별도 venv와 전체 wheelhouse는 아래처럼 새 환경을 완전히 재현할 때 사용하는 경로입니다.
 
 ## 새 환경의 오프라인 설치 묶음 준비
 
@@ -68,12 +75,13 @@ python3.12 scripts/collect_wheels.py --reuse-resolution --jobs 4
 
 ```bash
 cd /path/to/copypaste  # 반입하거나 clone한 프로젝트 경로
-bash scripts/install_offline.sh
-source scripts/env.sh
-bash scripts/build_yolox.sh
-python scripts/check_upstream.py
-python scripts/make_sample_data.py
+bash scripts/install_offline.sh  # 선택 사항: 전체 lock으로 별도 .venv를 만드는 기존 설치 도구
+.venv/bin/python run.py build
+.venv/bin/python scripts/check_upstream.py
+.venv/bin/python run.py sample-data
 ```
+
+위 설치 도구는 `.venv`를 만들므로 이후 명령에서는 `.venv/bin/python`을 사용합니다. 기존 환경을 그대로 쓸 때는 이 설치 도구를 실행하지 않습니다.
 
 샘플 생성 도구는 기존 데이터를 덮어쓰지 않습니다. 이미 `data/sample/sample_manifest.json`이 있으면 생성 명령을 생략하세요. `--force`는 직접 생성한 샘플을 다시 만들 때만 사용합니다. 샘플은 단순한 차량 모양과 배경이며, 실제 SAM3 결과나 실제 항공영상이 아닙니다.
 
@@ -83,8 +91,7 @@ python scripts/make_sample_data.py
 
 ```bash
 cd /path/to/copypaste
-export YOLOX_PYTHON="$(python -c 'import sys; print(sys.executable)')"
-"$YOLOX_PYTHON" scripts/check_existing_env.py --plan --include-build \
+python run.py check-env --plan --include-build \
   --output artifacts/server-env
 ```
 
@@ -93,39 +100,38 @@ export YOLOX_PYTHON="$(python -c 'import sys; print(sys.executable)')"
 부족한 패키지가 있으면 로컬 wheelhouse만 사용해 전이 의존성까지 계획하고 `artifacts/server-env/requirements-missing.txt`에 정확한 버전·SHA256을 기록합니다. 필요한 wheel만 있어도 되며 전체 4.3 GiB를 요구하지 않습니다. 누락된 wheel, 기존 의존성 교체, 중복 OpenCV, 확인되지 않은 wheel은 설치 계획을 차단합니다. 생성된 파일에 실제 패키지 행이 있을 때만 같은 Python으로 설치합니다.
 
 ```bash
-PIP_CONFIG_FILE=/dev/null "$YOLOX_PYTHON" scripts/no_network.py "$YOLOX_PYTHON" -m pip \
+PIP_CONFIG_FILE=/dev/null python scripts/no_network.py python -m pip \
   --isolated install --no-index --find-links=./wheelhouse \
   --no-deps --require-hashes -r artifacts/server-env/requirements-missing.txt
 ```
 
-그런 다음 동일 환경을 연결합니다. 프로젝트의 `.venv`를 새로 만들거나 강제로 선택하지 않습니다.
+그런 다음 활성화한 환경의 Python으로 실행합니다. `run.py`는 프로젝트의 `.venv`를 새로 만들거나 강제로 선택하지 않습니다.
 
 ```bash
-source scripts/env.sh
-bash scripts/build_yolox.sh
-bash scripts/train_original.sh --device cuda
-bash scripts/train_online.sh --device cuda
+python run.py build
+python run.py train --mode original --device cuda
+python run.py train --mode online --device cuda
 ```
 
-이 모드는 기존 버전을 자동으로 높이거나 낮추지 않습니다. 현재 requirements 범위를 벗어난 기존 NumPy/OpenCV/TensorBoard 등은 충돌로 표시되며, 해당 버전을 유지할 수 있는지는 대상 서버에서 별도 호환성 검증 후 범위를 조정해야 합니다. 버전 범위 안의 모든 조합을 학습 검증했다고 주장하지 않습니다. `--output`은 빈 폴더를 지정하고, 설치 후 재점검할 때는 다른 폴더를 사용하세요. GPU 학습 검증은 `scripts/validate_gpu.py`로 별도 수행합니다.
+이 모드는 기존 버전을 자동으로 높이거나 낮추지 않습니다. 현재 requirements 범위를 벗어난 기존 NumPy/OpenCV/TensorBoard 등은 충돌로 표시되며, 해당 버전을 유지할 수 있는지는 대상 서버에서 별도 호환성 검증 후 범위를 조정해야 합니다. 버전 범위 안의 모든 조합을 학습 검증했다고 주장하지 않습니다. `--output`은 빈 폴더를 지정하고, 설치 후 재점검할 때는 다른 폴더를 사용하세요. GPU 학습 검증은 `python run.py validate-gpu`로 별도 수행합니다.
 
 `pip install -r requirements.txt`도 조건을 만족하는 기존 패키지는 재설치하지 않습니다. 다만 조건이 맞지 않으면 pip가 교체할 수 있고 OpenCV 제공 패키지를 자동 구분하지 않으므로, 기존 환경을 유지하려면 위 점검·누락 목록 절차를 권장합니다.
 
 GPU가 있는 서버에서 두 학습 모드를 실행합니다.
 
 ```bash
-bash scripts/train_original.sh --config configs/original.json --device cuda
-bash scripts/train_online.sh --config configs/online.json --device cuda
-python -m offline_yolox.preview --config configs/online.json --output outputs/preview --count 4
+python run.py train --mode original --config configs/original.json --device cuda
+python run.py train --mode online --config configs/online.json --device cuda
+python run.py preview --config configs/online.json --output outputs/preview --count 4
 ```
 
 GPU가 없을 때는 CPU 진단을 명시합니다. 이 경로는 공식 모델·Loss·SGD·증강을 사용하지만 CUDA 전용 공식 Trainer를 CPU에서 실행하는 경로는 아닙니다.
 
 ```bash
-bash scripts/train_original.sh --config configs/original.json --device cpu --stop-after-epoch 1
-bash scripts/train_original.sh --config configs/original.json --device cpu \
+python run.py train --mode original --config configs/original.json --device cpu --stop-after-epoch 1
+python run.py train --mode original --config configs/original.json --device cpu \
   --resume outputs/original/sample_nano/latest_ckpt.pth
-bash scripts/train_online.sh --config configs/online.json --device cpu
+python run.py train --mode online --config configs/online.json --device cpu
 ```
 
 샘플 설정은 작은 `nano`, 128×128, batch 2, 2 epochs입니다. 실제 학습에는 별도 설정 파일에서 `preset`, `input_size`, `test_size`, `batch_size`, `max_epoch`, `basic_lr_per_img`, 증강과 schedule을 지정하세요. 기본 학습률은 **이미지당 학습률**이며, YOLOX가 batch size를 곱합니다. `warmup_epochs + no_aug_epochs < max_epoch`를 유지해야 합니다. `preset`은 nano/tiny/s/m/l/x를 지원합니다. 멀티 GPU/DDP는 이 프로젝트의 검증 범위에 포함하지 않습니다.
@@ -147,9 +153,9 @@ DATA_ROOT/
 사전학습 가중치는 로컬 파일을 직접 지정합니다. 지정하지 않으면 초기화된 모델로 시작하며 자동 다운로드하지 않습니다.
 
 ```bash
-bash scripts/train_original.sh --config configs/original.json --device cuda --checkpoint /data/weights/model.pth
-bash scripts/train_original.sh --config configs/original.json --device cuda --fp16
-bash scripts/evaluate.sh --config configs/original.json --device cuda \
+python run.py train --mode original --config configs/original.json --device cuda --checkpoint /data/weights/model.pth
+python run.py train --mode original --config configs/original.json --device cuda --fp16
+python run.py evaluate --config configs/original.json --device cuda \
   --checkpoint outputs/original/sample_nano/latest_ckpt.pth --evaluator fast \
   --output outputs/original/evaluation.json
 ```
@@ -177,12 +183,12 @@ bash scripts/evaluate.sh --config configs/original.json --device cuda \
 python scripts/no_network.py python -m pytest -q --junitxml=reports/pytest-cpu.xml
 
 # 실제 GPU: CUDA/NMS/FP32/AMP, 두 모드의 native epoch/resume/COCO 평가.
-python scripts/no_network.py python scripts/validate_gpu.py
+python run.py validate-gpu
 
 # 대상 서버 조사
 python scripts/environment_probe.py --output reports/environment-target.json
 ```
 
-GPU 검증 도구는 GPU가 없으면 `blocked` 결과를 저장하고 exit 2로 종료합니다. CPU 테스트의 GPU 항목은 skipped로 표시합니다. GPU 검증은 샘플 설정이 기본이며, 실제 데이터 설정을 `--original-config`, `--online-config`로 전달해야 실데이터를 검사합니다. Native CUDA prefetcher의 대기 batch와 sampler cursor는 checkpoint에 저장하지 않으므로 GPU resume의 합성·증강 순서가 bit-exact하게 같다고 보장하지 않습니다.
+`run.py`는 학습·평가·미리보기·GPU 검증 실행 시 기존 네트워크 차단 도구를 적용합니다. GPU 검증 도구는 GPU가 없으면 `blocked` 결과를 저장하고 exit 2로 종료합니다. CPU 테스트의 GPU 항목은 skipped로 표시합니다. GPU 검증은 샘플 설정이 기본이며, 실제 데이터 설정을 `--original-config`, `--online-config`로 전달해야 실데이터를 검사합니다. Native CUDA prefetcher의 대기 batch와 sampler cursor는 checkpoint에 저장하지 않으므로 GPU resume의 합성·증강 순서가 bit-exact하게 같다고 보장하지 않습니다.
 
 원본 출처·라이선스는 `third_party/UPSTREAM.json`, 원본 파일 SHA256은 `third_party/SOURCE_SHA256.json`에 있습니다. 원본 YOLOX 파일은 수정하지 않고 `src/offline_yolox/`에 실행 어댑터를 구현했습니다. wheel과 로컬 가상환경·출력은 Git에 포함하지 않습니다. 폐쇄망 반입 시에는 wheelhouse를 소스와 함께 별도로 전달해야 합니다.

@@ -11,7 +11,7 @@ import sys
 import tarfile
 
 ROOT = Path(__file__).resolve().parents[1]
-ENTRIES = [".gitignore", "pyproject.toml", "README.md", "OFFLINE_INSTALL.md",
+ENTRIES = [".gitignore", "pyproject.toml", "run.py", "README.md", "OFFLINE_INSTALL.md",
            "environment_report.md", "compatibility_report.md", "TEST_REPORT.md",
            "requirement.txt", "requirements.txt", "constraints-numpy126.txt",
            "constraints-existing-server.txt",
