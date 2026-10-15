@@ -53,7 +53,9 @@ python run.py preview --config configs/online.json --output outputs/preview --co
 
 Preview는 PNG, Box overlay, 각 instance의 최종 Mask와 Metadata JSON을 내보낸다. `--unique-objects`를 사용하려면 객체 세트를 요청한 개수 이상 준비한다. 기존 파일을 보호하기 위해 Preview 출력 폴더는 비어 있어야 한다. `--no-unique-objects`와 `--no-require-object-count`로 JSON의 해당 옵션을 명시적으로 끌 수 있다. CLI로 바꾼 설정도 checkpoint에 기록되므로 Online 학습을 `--resume`으로 재개할 때는 같은 합성 옵션을 함께 지정한다.
 
-학습 가능한 이미지와 정답 JSON을 저장하려면 `export`를 사용한다. Preview의 Metadata JSON과 달리 `annotations/instances_train2017.json`은 표준 COCO 형식이며 `images`, `annotations`, `categories`를 포함한다. 각 annotation의 `bbox`는 `[x, y, width, height]`, `area`는 최종 visible Mask의 전경 픽셀 수, `segmentation`은 같은 Mask의 COCO RLE다. 클래스 ID와 이름은 원래 검증 COCO의 category 매핑을 유지한다.
+Online 학습은 위의 `train --mode online` 명령만 실행하면 된다. 합성 이미지와 annotation JSON은 저장하지 않으며, 정답 박스·클래스는 메모리에서 자동 생성한다. `max_epoch`는 총 EPOCH, `copy_paste.epoch_length`는 EPOCH당 합성 이미지 분량, `batch_size`는 한 번에 처리하는 이미지 수다. 기존 검증용 COCO JSON과 객체·배경 manifest는 입력으로 유지한다.
+
+합성 데이터를 다른 학습 작업에 반출할 때만 선택 도구인 `export`를 사용한다. Online 학습에 필요한 사전 단계는 아니다. Preview의 Metadata JSON과 달리 `annotations/instances_train2017.json`은 표준 COCO 형식이며 `images`, `annotations`, `categories`를 포함한다. 각 annotation의 `bbox`는 `[x, y, width, height]`, `area`는 최종 visible Mask의 전경 픽셀 수, `segmentation`은 같은 Mask의 COCO RLE다. 클래스 ID와 이름은 원래 검증 COCO의 category 매핑을 유지한다.
 
 ```bash
 python run.py export --config configs/online.json --output outputs/synthetic \
