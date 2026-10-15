@@ -1,0 +1,90 @@
+{
+  "scope": "Synthetic diagnostic sample; CPU only; GPU not verified",
+  "images": 4,
+  "annotations": 20,
+  "objects_per_image": 5,
+  "object_long_side_range": [
+    16,
+    24
+  ],
+  "coco_annotation": "outputs/synthetic-five-objects/annotations/instances_train2017.json",
+  "generated_training_config": "outputs/synthetic-five-objects/train_config.json",
+  "training": {
+    "workflow": "cpu_diagnostic",
+    "native_cuda_trainer": false,
+    "device": "cpu",
+    "start_epoch": 0,
+    "completed_epochs": 2,
+    "epochs": [
+      {
+        "epoch": 1,
+        "iterations": 2,
+        "images": 4,
+        "mean_loss": 10.934647560119629,
+        "losses": [
+          10.96709156036377,
+          10.902203559875488
+        ],
+        "evaluation": {
+          "ap50_95": 0.0,
+          "ap50": 0.0,
+          "images": 4,
+          "detections": 0,
+          "backend": "standard",
+          "stats": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -1.0,
+            -1.0
+          ],
+          "summary": "Running per image evaluation...\nEvaluate annotation type *bbox*\nDONE (t=0.00s).\nAccumulating evaluation results...\nDONE (t=0.00s).\n Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = -1.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = -1.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = -1.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = -1.000\n"
+        }
+      },
+      {
+        "epoch": 2,
+        "iterations": 2,
+        "images": 4,
+        "mean_loss": 12.090553283691406,
+        "losses": [
+          12.161369323730469,
+          12.019737243652344
+        ],
+        "evaluation": {
+          "ap50_95": 0.0,
+          "ap50": 0.0,
+          "images": 4,
+          "detections": 0,
+          "backend": "standard",
+          "stats": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -1.0,
+            -1.0
+          ],
+          "summary": "Running per image evaluation...\nEvaluate annotation type *bbox*\nDONE (t=0.00s).\nAccumulating evaluation results...\nDONE (t=0.00s).\n Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = -1.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = -1.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = -1.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = -1.000\n"
+        }
+      }
+    ],
+    "checkpoint": "/workspace/copypaste/outputs/synthetic-five-objects/training-output/exported_nano/latest_ckpt.pth"
+  },
+  "mosaic_enabled": false,
+  "mixup_enabled": false,
+  "multiscale_range": 0,
+  "validation": "Existing held-out validation referenced by generated config"
+}

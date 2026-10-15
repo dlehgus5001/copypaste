@@ -89,23 +89,33 @@ class OnlineCopyPasteDataset(Dataset):
         self.class_index = {category_id: index for index, category_id in enumerate(self.class_ids)}
         self.epoch_length = self._positive_int(config.get("epoch_length", 1000), "epoch_length")
         self.object_count = _pair(config.get("object_count", [1, 5]), "object_count", integer=True, minimum=0)
+        self.unique_objects = self._boolean(config.get("unique_objects", False), "unique_objects")
+        self.require_object_count = self._boolean(config.get("require_object_count", False), "require_object_count")
+        self.composition_attempts = self._positive_int(config.get("composition_attempts", 20), "composition_attempts")
         self.max_labels = self._positive_int(config.get("max_labels", 120), "max_labels")
         if self.object_count[1] > self.max_labels:
             raise ValueError("object_count maximum must not exceed max_labels")
         self.rotation = _pair(config.get("rotation_degrees", [-180, 180]), "rotation_degrees")
-        sizes = config.get("object_long_side_pixels", [12, 18, 24, 32])
-        if not isinstance(sizes, list) or not sizes or any(
-                isinstance(v, bool) or not isinstance(v, (int, float)) or not np.isfinite(v) or v < 2
-                for v in sizes):
-            raise ValueError("object_long_side_pixels must contain finite sizes >= 2")
-        self.object_sizes = np.asarray(sizes, dtype=np.float64)
-        weights = config.get("object_size_weights", [1.0] * len(sizes))
-        if not isinstance(weights, list) or len(weights) != len(sizes) or any(
-                isinstance(v, bool) or not isinstance(v, (int, float)) or not np.isfinite(v) or v <= 0
-                for v in weights):
-            raise ValueError("object_size_weights must have one finite positive weight per size")
-        weights = np.asarray(weights, dtype=np.float64)
-        self.size_probabilities = weights / weights.sum()
+        self.object_size_range = None
+        self.object_sizes = self.size_probabilities = None
+        if "object_long_side_range" in config:
+            if "object_long_side_pixels" in config or "object_size_weights" in config:
+                raise ValueError("object_long_side_range cannot be combined with object_long_side_pixels or object_size_weights")
+            self.object_size_range = _pair(config["object_long_side_range"], "object_long_side_range", integer=True, minimum=2)
+        else:
+            sizes = config.get("object_long_side_pixels", [12, 18, 24, 32])
+            if not isinstance(sizes, list) or not sizes or any(
+                    isinstance(v, bool) or not isinstance(v, (int, float)) or not np.isfinite(v) or v < 2
+                    for v in sizes):
+                raise ValueError("object_long_side_pixels must contain finite sizes >= 2")
+            self.object_sizes = np.asarray(sizes, dtype=np.float64)
+            weights = config.get("object_size_weights", [1.0] * len(sizes))
+            if not isinstance(weights, list) or len(weights) != len(sizes) or any(
+                    isinstance(v, bool) or not isinstance(v, (int, float)) or not np.isfinite(v) or v <= 0
+                    for v in weights):
+                raise ValueError("object_size_weights must have one finite positive weight per size")
+            weights = np.asarray(weights, dtype=np.float64)
+            self.size_probabilities = weights / weights.sum()
         self.distribution_source = str(config.get("distribution_source", "uncalibrated_sample_pixels"))
         self.min_visible_fraction = self._nonnegative(config.get("min_visible_fraction", 0.25), "min_visible_fraction")
         if self.min_visible_fraction > 1:
@@ -113,18 +123,24 @@ class OnlineCopyPasteDataset(Dataset):
         self.min_visible_pixels = self._positive_int(config.get("min_visible_pixels", 4), "min_visible_pixels")
         self.min_box_side = self._positive_int(config.get("min_box_side_pixels", 2), "min_box_side_pixels")
         self.placement_attempts = self._positive_int(config.get("placement_attempts", 30), "placement_attempts")
-        self.allow_partial_objects = config.get("allow_partial_objects", False)
-        if not isinstance(self.allow_partial_objects, bool):
-            raise ValueError("allow_partial_objects must be boolean")
+        self.allow_partial_objects = self._boolean(config.get("allow_partial_objects", False), "allow_partial_objects")
         self.blend_sigma = self._nonnegative(config.get("gaussian_blend_sigma", 0.0), "gaussian_blend_sigma")
         self.blur_sigma = self._nonnegative(config.get("blur_sigma", 0.0), "blur_sigma")
         self.noise_std = self._nonnegative(config.get("noise_std", 0.0), "noise_std")
         self.brightness = _pair(config.get("brightness_range", [1.0, 1.0]), "brightness_range", minimum=0.01)
         self.objects = self._read_objects(config.get("objects_manifest", "objects/manifest.json"))
+        if self.unique_objects and self.object_count[1] > len(self.objects):
+            raise ValueError("object_count maximum must not exceed available distinct object image/mask sources when unique_objects is true")
         self.backgrounds = self._read_backgrounds(config.get("backgrounds_manifest", "backgrounds/manifest.json"))
         self._rng = None
         self._stream_key = None
         self._calls = 0
+
+    @staticmethod
+    def _boolean(value, name):
+        if not isinstance(value, bool):
+            raise ValueError(f"{name} must be boolean")
+        return value
 
     @staticmethod
     def _positive_int(value, name):
@@ -180,6 +196,7 @@ class OnlineCopyPasteDataset(Dataset):
 
     def _read_objects(self, name):
         result = []
+        seen_sources = set()
         for entry in self._read_manifest(name):
             if not isinstance(entry, dict) or not all(k in entry for k in ("image", "mask", "category_id")):
                 raise ValueError("Object entries require image, mask and category_id")
@@ -187,6 +204,10 @@ class OnlineCopyPasteDataset(Dataset):
             if isinstance(category, bool) or not isinstance(category, int) or category not in self.class_index:
                 raise ValueError(f"Object category_id {category} is absent from the validation COCO taxonomy")
             image_path, mask_path = self._asset_path(entry["image"]), self._asset_path(entry["mask"])
+            source_key = (image_path, mask_path)
+            if self.unique_objects and source_key in seen_sources:
+                raise ValueError("unique_objects requires distinct image/mask sources; the object manifest contains a duplicate pair")
+            seen_sources.add(source_key)
             image = self._read_image(image_path)
             self._read_mask(mask_path, image.shape[:2])
             result.append({"image": entry["image"], "mask": entry["mask"], "category_id": category,
@@ -223,20 +244,21 @@ class OnlineCopyPasteDataset(Dataset):
         bounds = bbox_from_mask(mask)
         return bounds is not None and min(bounds[2] - bounds[0], bounds[3] - bounds[1]) >= self.min_box_side
 
-    def sample_raw(self):
-        """Return image, aligned xyxy/class labels, final masks and JSON-safe metadata."""
-        rng, worker_id = self._random_stream()
+    def _compose(self, rng, background, count):
+        """Attempt one complete composition without changing the requested count."""
         height, width = self.input_dim
-        background = self.backgrounds[int(rng.integers(len(self.backgrounds)))]
         image = cv2.resize(self._read_image(background["image_path"]), (width, height), interpolation=cv2.INTER_LINEAR)
-        count = int(rng.integers(self.object_count[0], self.object_count[1] + 1))
         masks, instances = [], []
         rejected = 0
-        for _ in range(count):
-            source = self.objects[int(rng.integers(len(self.objects)))]
+        source_indices = rng.choice(len(self.objects), size=count, replace=False) if self.unique_objects else None
+        for source_index in range(count):
+            source = self.objects[int(source_indices[source_index]) if self.unique_objects else int(rng.integers(len(self.objects)))]
             obj = self._read_image(source["image_path"])
             mask = self._read_mask(source["mask_path"], obj.shape[:2])
-            long_side = float(rng.choice(self.object_sizes, p=self.size_probabilities))
+            if self.object_size_range is None:
+                long_side = float(rng.choice(self.object_sizes, p=self.size_probabilities))
+            else:
+                long_side = float(rng.integers(self.object_size_range[0], self.object_size_range[1] + 1))
             angle = float(rng.uniform(*self.rotation))
             obj, mask = transform_object(obj, mask, long_side, angle)
             obj_height, obj_width = mask.shape
@@ -282,6 +304,32 @@ class OnlineCopyPasteDataset(Dataset):
                 break
             if not accepted:
                 rejected += 1
+        return image, masks, instances, rejected
+
+    def sample_raw(self):
+        """Return image, aligned xyxy/class labels, final masks and JSON-safe metadata.
+
+        Strict count mode retries the whole composition a bounded number of times.
+        The requested count is drawn once and successful returned samples advance
+        the call index once, regardless of the number of composition attempts.
+        """
+        rng, worker_id = self._random_stream()
+        # Retain the original background/count draw order for existing configs.
+        background = self.backgrounds[int(rng.integers(len(self.backgrounds)))]
+        count = int(rng.integers(self.object_count[0], self.object_count[1] + 1))
+        attempt_limit = self.composition_attempts if self.require_object_count else 1
+        for composition_attempt in range(1, attempt_limit + 1):
+            if composition_attempt > 1:
+                background = self.backgrounds[int(rng.integers(len(self.backgrounds)))]
+            image, masks, instances, rejected = self._compose(rng, background, count)
+            if not self.require_object_count or len(instances) == count:
+                break
+        else:
+            raise RuntimeError(
+                f"Could not place requested {count} objects after {attempt_limit} composition attempts "
+                f"(last attempt placed {len(instances)}). Reduce object_count or object sizes, "
+                "increase the input size, or adjust placement/visibility settings."
+            )
         labels = []
         for mask, instance in zip(masks, instances):
             bounds = bbox_from_mask(mask)
@@ -296,6 +344,7 @@ class OnlineCopyPasteDataset(Dataset):
         image = np.ascontiguousarray(np.clip(np.rint(image), 0, 255).astype(np.uint8))
         metadata = {"background": background["image"], "instances": instances,
                     "requested_object_count": count, "placed_object_count": len(instances),
+                    "composition_attempts_used": composition_attempt,
                     "rejected_object_count": rejected, "distribution_source": self.distribution_source,
                     "worker_id": worker_id, "stream_seed": self._stream_seed,
                     "epoch": self.epoch, "call_index": self._calls,

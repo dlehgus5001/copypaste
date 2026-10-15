@@ -9,6 +9,7 @@ import numpy as np
 import torch
 
 from .bootstrap import local_path
+from .composition_options import add_composition_arguments, composition_config
 from .experiment import create_exp, read_config, seed_everything
 
 
@@ -270,6 +271,7 @@ def main(argv=None):
     parser.add_argument("--fp16", action="store_true")
     parser.add_argument("--stop-after-epoch", type=int, help="Stop at an epoch boundary, preserving configured total schedule")
     parser.add_argument("--cpu-threads", type=int, default=2)
+    add_composition_arguments(parser)
     args = parser.parse_args(argv)
     if args.resume and args.checkpoint:
         parser.error("--resume and --checkpoint are mutually exclusive")
@@ -277,6 +279,10 @@ def main(argv=None):
     values = read_config(config)
     if args.mode and values.get("mode", "original") != args.mode:
         parser.error("--mode does not match the mode declared in --config")
+    try:
+        values = composition_config(values, args)
+    except ValueError as error:
+        parser.error(str(error))
     if args.device == "cuda" and not torch.cuda.is_available():
         raise RuntimeError("CUDA is unavailable. GPU training requires a CUDA GPU; --device cpu explicitly runs the diagnostic harness.")
     if args.device == "cpu" and args.fp16:

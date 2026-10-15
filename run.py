@@ -15,6 +15,7 @@ COMMANDS = {
     "sample-data": ["-m", "offline_yolox.sample_data"],
     "train": ["-m", "offline_yolox.train"],
     "preview": ["-m", "offline_yolox.preview"],
+    "export": ["-m", "offline_yolox.export"],
     "evaluate": ["-m", "offline_yolox.evaluate"],
     "validate-gpu": ["scripts/validate_gpu.py"],
 }

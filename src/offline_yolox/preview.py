@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 
 from .bootstrap import local_path
+from .composition_options import add_composition_arguments, composition_config
 from .experiment import create_exp, read_config
 
 
@@ -53,8 +54,13 @@ def main(argv=None):
     parser.add_argument("--config", default="configs/online.json")
     parser.add_argument("--output", default="outputs/preview")
     parser.add_argument("--count", type=int, default=4)
+    add_composition_arguments(parser)
     args = parser.parse_args(argv)
-    result = save_preview(read_config(args.config), args.output, args.count)
+    try:
+        config = composition_config(read_config(args.config), args)
+    except ValueError as error:
+        parser.error(str(error))
+    result = save_preview(config, args.output, args.count)
     print(json.dumps(result), flush=True)
     return result
 

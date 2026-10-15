@@ -108,6 +108,16 @@ Python 3.12.14 / torch 2.8.0+cu129 / torchvision 0.23.0+cu129 / NumPy 1.26.4 / O
 
 `python run.py build`도 같은 인터프리터로 공식 `setup.py build_ext --inplace`와 FastCOCOEval 로드를 완료했다. 실제 명령에는 기존 seccomp 네트워크 차단이 적용된다. 공식 YOLOX 원본 170개 파일의 hash는 변하지 않았다. GPU 학습 검증은 여전히 대상 GPU 서버에서 수행해야 한다.
 
+## 객체 5개·크기 조절·COCO 저장 추가 검증
+
+2026-10-15, 같은 NumPy 1.26.4 / TensorBoard 2.16.2 환경에서 전체 **87 passed, 4 GPU skipped, 0 failed, 12 warnings**, 43.11초를 확인했다. [`reports/pytest-synthetic-export.xml`](reports/pytest-synthetic-export.xml)에 결과를 저장했다.
+
+새 테스트 21개는 객체 5개 보장과 bounded retry 실패, 중복 없는 객체 선택, 고정·범위 크기와 RNG 재현성, 잘못된 설정 거부를 확인했다. COCO JSON은 비연속 category ID 7·29를 유지하고, 저장한 PNG 픽셀과 RLE mask를 원래 합성 결과와 비교했다. 각 mask의 실제 픽셀에서 bbox·area를 다시 계산해 annotation과 일치함을 확인했다. 생성한 `train_config.json`으로 실제 CPU 1 epoch 및 기존 held-out validation 평가도 통과했다.
+
+자동 학습 설정이 Original 기본 Mosaic/MixUp으로 객체 수를 늘리지 않도록, 생성 설정에서 Mosaic·MixUp·multiscale을 끄도록 마무리했다. 이 변경 뒤 관련 **21 passed, 0 failed**, 7.81초를 다시 확인했다. [`reports/pytest-synthetic-export-controls.xml`](reports/pytest-synthetic-export-controls.xml)에 최종 관련 테스트 결과가 있다. 일반 Original 설정과 Online 메모리 합성의 동작은 이 자동 생성 설정과 별개다.
+
+실제 Python CLI로 샘플 4장을 16~24픽셀 객체 5개씩 합성하여 표준 COCO annotation 20개와 학습 설정을 생성했다. 이어 생성된 설정으로 Original CPU 2 epochs 학습과 COCO 평가를 완료했다. [`reports/synthetic-export-validation.json`](reports/synthetic-export-validation.json)에 결과를 기록했다. 출력 파일은 로컬 `outputs/synthetic-five-objects/`에 있고 Git에는 포함하지 않는다. export는 기존 검증 이미지·annotation의 경로를 참조하며 검증 데이터를 복제하거나 학습 이미지로 대체하지 않는다. GPU 학습 검증은 수행하지 못했다.
+
 ## 재사용 클라우드 설정
 
 설치 지침 `install_script`와 시작 지침 `start_skill`을 환경 설정 초안에 저장했습니다. 전체 저장 설치 script도 현재 머신에서 실행하여 exit 0을 확인했습니다. 현재 venv·wheel·소스 준비 상태와 초안 저장은 확인했으며, **환경 게시 및 새 작업에서의 복원은 아직 수행하지 않았습니다.** 환경 설정에서 변경 내용을 검토·저장한 뒤 환경을 게시해야 활성화됩니다. 운영 프로세스의 유지에 의존하는 설정은 없습니다.

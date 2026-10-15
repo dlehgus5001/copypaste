@@ -55,6 +55,23 @@ python run.py evaluate --config configs/online.json --device cuda \
   --output outputs/online/evaluation.json
 ```
 
+이미지마다 객체 **5개**를 합성하고 크기를 **16~24픽셀**로 바꾸려면 다음처럼 실행합니다. 크기는 회전 전 객체의 긴 변 기준입니다. `--object-size 24`를 쓰면 24픽셀로 고정할 수 있습니다.
+
+```bash
+# 학습할 때마다 새로 합성
+python run.py train --mode online --device cuda \
+  --objects-per-image 5 --object-size-range 16 24 --require-object-count
+
+# 이미지 100장과 학습 가능한 COCO 정답 JSON을 먼저 저장
+python run.py export --config configs/online.json --output outputs/synthetic \
+  --count 100 --objects-per-image 5 --object-size-range 16 24 --require-object-count
+
+# 저장한 합성 이미지와 JSON으로 일반 학습
+python run.py train --mode original --config outputs/synthetic/train_config.json --device cuda
+```
+
+`export` 출력 폴더는 새 경로나 빈 폴더를 지정하세요. 만들어진 `train_config.json`은 기존 Online 설정의 검증 데이터를 사용하므로 해당 검증 데이터도 계속 필요합니다. 기본적으로 같은 객체·마스크 세트를 여러 번 선택할 수 있습니다. 이미지 안에서 서로 다른 세트만 선택하려면 `--unique-objects`를 추가하고 객체 세트를 5개 이상 준비하세요. 객체를 5개 배치할 수 없으면 재시도 후 오류로 알립니다.
+
 각 명령의 옵션은 `python run.py --help`, `python run.py train --help` 등으로 확인합니다. `train --mode original`은 `configs/original.json`, `train --mode online`은 `configs/online.json`을 기본으로 사용합니다. `--config`로 다른 설정을 지정할 수 있으며, 명시한 `--mode`와 설정의 모드가 다르면 오류로 종료합니다. C++ 빌드에는 시스템의 `gcc`·`g++`가 필요하고, 학습·평가 등의 네트워크 차단 실행에는 Linux의 `libseccomp`가 필요합니다.
 
 GPU가 없는 머신은 두 학습·평가 명령의 `cuda`를 `cpu`로 바꾸어 진단합니다. 별도 venv와 전체 wheelhouse는 아래처럼 새 환경을 완전히 재현할 때 사용하는 경로입니다.
@@ -172,7 +189,9 @@ python run.py evaluate --config configs/original.json --device cuda \
 ]
 ```
 
-객체 manifest와 배경 manifest의 상대 경로 기준은 `asset_root`입니다. 배경 manifest는 이미지 경로 문자열의 배열입니다. COCO category ID를 사용하고 내부 YOLOX label index로 변환합니다. 학습 Dataset은 결과 이미지를 메모리에서 생성하여 바로 DataLoader에 전달합니다. Preview 도구를 명시적으로 호출했을 때만 결과 이미지·bbox·mask를 저장합니다.
+객체 manifest와 배경 manifest의 상대 경로 기준은 `asset_root`입니다. 배경 manifest는 이미지 경로 문자열의 배열입니다. COCO category ID를 사용하고 내부 YOLOX label index로 변환합니다. Online 학습은 결과를 메모리에서 생성하여 바로 DataLoader에 전달합니다. `preview`는 눈으로 확인할 이미지·bbox·mask·Metadata JSON을, `export`는 일반 학습에 사용할 이미지와 표준 COCO annotation JSON을 저장합니다.
+
+객체 수는 `copy_paste.object_count: [5, 5]`, 크기는 `object_long_side_range: [16, 24]`로 설정할 수 있습니다. 범위 방식과 기존 `object_long_side_pixels`/`object_size_weights` 방식은 함께 지정하지 않습니다. 명령의 `--objects-per-image`, `--object-size`, `--object-size-range`로 해당 실행에만 값을 바꿀 수도 있습니다. 기본 Online 설정은 객체 5개를 요구하며 `require_object_count: true`로 부족한 개수의 합성 결과를 거부합니다. `unique_objects: false`이면 같은 객체·마스크 세트의 중복 선택을 허용합니다.
 
 실제 항공영상의 객체 크기 관측값으로 크기 분포를 보정해야 합니다. 샘플 설정의 픽셀 크기와 증강값은 기능 검증용이며 실제 크기 분포를 추정한 값이 아닙니다.
 
