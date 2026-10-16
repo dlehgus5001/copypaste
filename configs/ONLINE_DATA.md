@@ -148,3 +148,23 @@ outputs/synthetic/
 출력 폴더는 새 경로나 빈 폴더여야 한다. `train_config.json`은 저장된 합성 이미지를 학습 데이터로 사용하고, 기존 Online 설정의 검증 이미지·annotation을 그대로 참조한다. 합성한 객체 수와 픽셀 크기를 유지하기 위해 이 학습 설정은 Mosaic·MixUp·multiscale을 끈다. EPOCH·배치 크기 등은 원래 Online 설정을 이어받는다. 검증 데이터는 합성하거나 복사하지 않으므로 기존 경로를 유지해야 한다. 이동해서 사용할 때는 설정의 데이터 경로도 확인한다. `--split val2017`은 `val2017/`과 `annotations/instances_val2017.json`으로 저장하며 학습 설정은 만들지 않는다. 실제 성능 검증에는 학습용 합성과 별도로 확보한 검증 데이터를 사용한다.
 
 재현성은 같은 파일·의존 버전·seed·epoch·batch size·worker 수·Sampler 순서의 새 Loader에서 검증했다. 각 Worker는 PyTorch가 설정한 서로 다른 seed를 사용한다. 0 Worker와 2 Worker는 각각 반복 실행 결과를 재현하지만 서로 동일한 이미지를 생성한다고 보장하지 않는다. 유한 CPU 진단은 Epoch마다 seed+epoch로 Loader를 새로 만들어 Epoch 경계 Resume를 정확히 재현한다. Native CUDA Trainer의 체크포인트는 모델/Optimizer/EMA/Scaler/RNG를 복원하지만 무한 Loader의 worker/prefetch 진행 상태는 복원하지 않으므로 합성 스트림의 bit-exact 재개를 보장하지 않는다. 중간 iteration 재개도 제공하지 않는다.
+
+## 검증 JSON에서 DRM 이미지 제외
+
+기존 COCO JSON이 DRMONE 암호화 이미지를 포함한다면 원본을 보존하고 해당 이미지와 연결된 annotation을 제외한 새 JSON을 만든다. 아래 `--config`에는 실제 학습에 사용한 설정 파일을 지정한다. 이 설정의 `data_dir`, `val_ann`, `val_name`으로 검증 JSON과 이미지 경로를 자동 선택하며 절대 `file_name`도 기존 YOLOX와 동일하게 처리한다.
+
+```bash
+python scripts/filter_coco.py --config configs/online_folders.json \
+  --output artifacts/val_clean.json --check-readable
+```
+
+기본적으로 관측된 DRMONE 헤더를 검사한다. `--check-readable`은 나머지 이미지도 YOLOX와 같은 OpenCV 읽기로 확인하여 디코딩 실패 파일을 제외한다. 파일이 없거나 접근 권한이 없으면 경로 오류로 정상 데이터를 대량 제외하지 않도록 중단한다. 결과가 비어도 JSON을 생성하지 않는다. 기존 출력 파일은 덮어쓰지 않는다.
+
+실행 결과에 제외한 이미지 ID·파일명·사유와 전후 개수를 출력한다. 기존 이미지/annotation ID는 재번호하지 않고, `categories`와 나머지 메타데이터는 유지한다. 원본 JSON과 이미지 파일은 수정·삭제하지 않는다. 생성 후 학습 설정의 `val_ann`을 새 JSON의 절대 경로(예: `/home/work/DH_/copypaste-main/artifacts/val_clean.json`)로 바꾸고 `data_dir`, `val_name`은 유지한다.
+
+특정 JSON과 이미지 루트를 직접 지정하거나 이미지 ID를 추가 제외할 수도 있다.
+
+```bash
+python scripts/filter_coco.py --input /data/annotations/val.json \
+  --image-root /data/images --output artifacts/val_clean.json --exclude-ids 5 6
+```
