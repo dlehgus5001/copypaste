@@ -14,9 +14,12 @@ def save_preview(config, output, count=4):
     if not isinstance(count, int) or count <= 0:
         raise ValueError("count must be positive")
     exp = create_exp(config)
-    if exp.config.get("mode") != "online":
-        raise ValueError("Preview requires an online configuration")
+    mode = exp.config.get("mode")
+    if mode not in ("online", "online_patch", "original_patch"):
+        raise ValueError("Preview requires an online or original_patch configuration")
     dataset = exp.get_dataset()
+    if mode == "original_patch":
+        count = min(count, len(dataset))
     output = local_path(output)
     if output.exists() and any(output.iterdir()):
         raise FileExistsError(f"Preview output must be empty to protect existing files: {output}")
@@ -24,16 +27,28 @@ def save_preview(config, output, count=4):
     summary = {"count": count, "seed": exp.seed, "config": exp.config,
                "training_writes_synthetic_images": False, "samples": []}
     for index in range(count):
-        sample = dataset.sample_raw()
+        if mode == "original_patch":
+            image, labels, _, _ = dataset.pull_item(index)
+            record = dataset.records[index]
+            sample = {"image": image, "labels": labels, "masks": [], "metadata": {
+                "source_image": record["path"], "source_image_id": record["source_image_id"],
+                "crop_xy": list(record["xy"]), "patch_size": list(dataset.settings["size"]),
+                "instances": [{"bbox_xyxy": label[:4].tolist(),
+                               "class_name": exp.class_names[int(label[4])]}
+                              for label in labels],
+            }}
+        else:
+            sample = dataset.sample_raw()
         image_name, overlay_name = f"sample_{index:04}.png", f"sample_{index:04}_boxes.png"
         annotated = sample["image"].copy()
         mask_paths = []
-        for instance_index, (mask, instance) in enumerate(zip(sample["masks"], sample["metadata"]["instances"])):
+        for instance_index, mask in enumerate(sample["masks"]):
             mask_name = f"sample_{index:04}_mask_{instance_index:03}.png"
             if not cv2.imwrite(str(output / mask_name), mask.astype(np.uint8) * 255):
                 raise OSError(f"Cannot write {mask_name}")
             mask_paths.append(mask_name)
-            x1, y1, x2, y2 = instance["bbox_xyxy"]
+        for instance in sample["metadata"]["instances"]:
+            x1, y1, x2, y2 = [int(round(v)) for v in instance["bbox_xyxy"]]
             cv2.rectangle(annotated, (x1, y1), (x2 - 1, y2 - 1), (0, 230, 255), 1)
             cv2.putText(annotated, instance["class_name"], (x1, max(10, y1 - 2)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.25, (0, 230, 255), 1, cv2.LINE_AA)

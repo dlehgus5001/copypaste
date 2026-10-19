@@ -31,7 +31,7 @@ def composition_config(config, args):
              "unique_objects", "require_object_count")
     if not any(getattr(args, name, None) is not None for name in names):
         return values
-    if values.get("mode", "original") != "online":
+    if values.get("mode", "original") not in ("online", "online_patch"):
         raise ValueError("Composition options require an online configuration")
     if not isinstance(values.get("copy_paste"), dict):
         raise ValueError("Online mode requires a copy_paste configuration object")

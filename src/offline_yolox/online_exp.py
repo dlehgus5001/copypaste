@@ -8,6 +8,8 @@ from .experiment import OfflineExp, seed_worker
 
 
 class OnlineExp(OfflineExp):
+    dataset_class = OnlineCopyPasteDataset
+
     def __init__(self, config):
         # Only the held-out COCO validation taxonomy is required for online data.
         # Reusing base validation avoids requiring an unrelated COCO training split.
@@ -35,12 +37,13 @@ class OnlineExp(OfflineExp):
             dataset.epoch = int(epoch)
             dataset._rng, dataset._stream_key, dataset._calls = None, None, 0
             return dataset
-        return OnlineCopyPasteDataset(
+        return self.dataset_class(
             config=self.copy_paste, input_size=self.input_size,
             class_ids=self.class_ids, class_names=self.class_names,
             seed=self.seed, epoch=epoch,
             preproc=TrainTransform(max_labels=self.copy_paste.get("max_labels", 120),
                                    flip_prob=self.flip_prob, hsv_prob=self.hsv_prob),
+            **getattr(self, "dataset_options", {}),
         )
 
     def get_data_loader(self, batch_size, is_distributed=False, no_aug=False, cache_img=None,

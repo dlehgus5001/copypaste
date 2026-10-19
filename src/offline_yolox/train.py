@@ -262,7 +262,7 @@ def build_cuda_trainer(exp, args):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mode", choices=("original", "online"),
+    parser.add_argument("--mode", choices=("original", "online", "original_patch", "online_patch"),
                         help="Select the default configuration; an explicit --config must match this mode")
     parser.add_argument("--config", help="Local configuration (default: configs/<mode>.json, original if no mode given)")
     parser.add_argument("--device", choices=("cuda", "cpu"), default="cuda")

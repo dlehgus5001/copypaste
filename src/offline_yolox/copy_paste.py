@@ -258,10 +258,14 @@ class OnlineCopyPasteDataset(Dataset):
         bounds = bbox_from_mask(mask)
         return bounds is not None and min(bounds[2] - bounds[0], bounds[3] - bounds[1]) >= self.min_box_side
 
+    def _background_canvas(self, rng, background):
+        height, width = self.input_dim
+        return cv2.resize(self._read_image(background["image_path"]), (width, height), interpolation=cv2.INTER_LINEAR)
+
     def _compose(self, rng, background, count):
         """Attempt one complete composition without changing the requested count."""
         height, width = self.input_dim
-        image = cv2.resize(self._read_image(background["image_path"]), (width, height), interpolation=cv2.INTER_LINEAR)
+        image = self._background_canvas(rng, background)
         masks, instances = [], []
         rejected = 0
         source_indices = rng.choice(len(self.objects), size=count, replace=False) if self.unique_objects else None

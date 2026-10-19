@@ -172,9 +172,12 @@ class OfflineExp(Exp):
 def create_exp(config):
     values = read_config(config) if isinstance(config, (str, os.PathLike)) else config
     mode = values.get("mode", "original")
+    if mode in ("original_patch", "online_patch"):
+        from .patch_exp import OriginalPatchExp, OnlinePatchExp
+        return (OriginalPatchExp if mode == "original_patch" else OnlinePatchExp)(values)
     if mode == "online":
         from .online_exp import OnlineExp
         return OnlineExp(values)
     if mode != "original":
-        raise ValueError("mode must be 'original' or 'online'")
+        raise ValueError("mode must be original, online, original_patch or online_patch")
     return OfflineExp(values)

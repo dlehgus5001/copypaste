@@ -1,6 +1,6 @@
-# 폐쇄망 YOLOX: Original / Online Copy-Paste
+# 폐쇄망 YOLOX: Original / Online Copy-Paste / Patch
 
-공식 Megvii YOLOX를 포함한 **Python 3.12 / PyTorch 2.8.0+cu129 / torchvision 0.23.0+cu129** 학습 프로젝트입니다. 두 모드는 모델, Loss, Optimizer 및 COCO 평가를 공유합니다. Version 2는 이미 추출된 객체 이미지·마스크를 읽으며 SAM3 실행이나 인증이 필요하지 않습니다.
+공식 Megvii YOLOX를 포함한 **Python 3.12 / PyTorch 2.8.0+cu129 / torchvision 0.23.0+cu129** 학습 프로젝트입니다. `original`, `online`, `original_patch`, `online_patch`는 모델, Loss, Optimizer 및 COCO 평가를 공유합니다. 합성 모드는 이미 추출된 객체 이미지·마스크를 읽으며 SAM3 실행이나 인증이 필요하지 않습니다.
 
 현재 검증 환경에는 GPU가 없습니다. CPU 진단 학습의 성공은 GPU 학습 성공을 의미하지 않습니다. 실제 결과는 [TEST_REPORT.md](TEST_REPORT.md), 시스템 정보는 [environment_report.md](environment_report.md), 분석은 [compatibility_report.md](compatibility_report.md)를 확인하세요.
 
@@ -89,6 +89,39 @@ python run.py train --mode online --config configs/online_folders.json --device 
 이 설정은 `data/assets/object`, `mask`, `background`를 하위 폴더까지 자동으로 읽습니다. `object/type1/001.png`는 `mask/type1/001.png`와 한 세트입니다. 마스크는 객체 이미지와 같은 크기의 단일 채널 이진 이미지로, 객체는 흰색(255), 나머지는 검정(0)으로 준비하세요. 대응하는 마스크가 없거나 후보가 여러 개이면 학습 전에 오류로 알립니다.
 
 `configs/online_folders.json`에서 `max_epoch`, `batch_size`, `copy_paste.epoch_length`를 바꾸면 학습 횟수와 배치 크기, EPOCH당 이미지 분량을 조절합니다. 이 파일은 작은 샘플 모델·입력 크기와 `data/sample`의 검증 데이터를 사용하므로, 실제 학습에서는 `data_dir`·`num_classes`·모델 설정도 맞추세요. 검증 클래스가 하나라면 위 5개 폴더의 객체는 모두 같은 클래스입니다. 5개 객체는 전체 파일 목록에서 랜덤으로 선택하며, 폴더마다 하나씩 선택하는 규칙은 아닙니다. 폴더별 클래스 지정과 경로 변경은 [configs/ONLINE_DATA.md](configs/ONLINE_DATA.md)를 참고하세요.
+
+## 큰 이미지를 패치로 학습하기
+
+기존 `original`, `online`은 그대로 사용합니다. 새 모드는 다음 두 가지입니다.
+
+| 모드 | 학습 입력 |
+| --- | --- |
+| `original_patch` | 큰 원본 이미지와 COCO 박스를 격자 패치로 잘라 학습 |
+| `online_patch` | 큰 배경에서 매번 랜덤 패치를 자른 뒤 그 위에 객체·마스크 합성 |
+
+먼저 사용할 새 설정 파일의 `data_dir`, `num_classes`, `train_ann`·`train_name`(원본 학습), `val_ann`·`val_name`(검증)을 실제 데이터에 맞춥니다. `online_patch`는 `copy_paste.asset_root`를 현재 사용하는 객체·마스크·배경 폴더의 루트로 지정합니다. 기본값은 `data/assets/object`, `mask`, `background`입니다. 기존 JSON의 `file_name`은 그대로 두면 됩니다.
+
+```bash
+# 원본 이미지의 패치 학습
+python run.py train --mode original_patch --config configs/original_patch.json --device cuda
+
+# 배경 패치 한 장마다 객체 5개를 합성해 학습
+python run.py train --mode online_patch --config configs/online_patch.json --device cuda \
+  --objects-per-image 5 --object-size-range 16 24 --require-object-count
+```
+
+새 설정의 기본 패치·모델 입력 크기는 **640×640**입니다. `patch.size`는 자를 원본 픽셀 크기 `[높이, 너비]`, `patch.stride`는 원본 격자를 이동할 간격입니다. 겹침을 주려면 예를 들어 `size: [640, 640]`, `stride: [512, 512]`로 지정합니다. `online_patch`의 배경 위치는 매번 랜덤이며 `stride`는 검증 패치에만 적용됩니다. `input_size`, `test_size`도 `[640, 640]`으로 맞추면 패치를 축소하지 않습니다. 크기를 다르게 지정하면 자른 후 모델 입력 크기에 맞춰 리사이즈합니다. 합성 객체의 `--object-size-range`는 최종 합성 캔버스에서 회전 전 긴 변 픽셀 크기입니다.
+
+원본 모드는 한 EPOCH에 모든 학습 패치를 한 번씩 순회합니다. 합성 모드는 `copy_paste.epoch_length`가 EPOCH당 패치 수입니다. `max_epoch`, `batch_size`는 기존과 같습니다. 패치 모드에서는 Mosaic·MixUp·multiscale을 사용하지 않으며, 색상·좌우 반전은 `hsv_prob`·`flip_prob`로 설정합니다.
+
+결과 확인은 선택적으로 실행합니다. 새 폴더에 원본 패치와 박스 표시 이미지를 저장합니다.
+
+```bash
+python run.py preview --config configs/original_patch.json --output outputs/preview_original_patch --count 4
+python run.py preview --config configs/online_patch.json --output outputs/preview_online_patch --count 4
+```
+
+학습 중 패치 이미지나 새 COCO JSON을 디스크에 저장하지 않습니다. 검증도 같은 크기의 격자 패치에서 수행하므로 **AP는 패치 기준**이며 전체 이미지로 예측을 합치는 평가는 아닙니다. 경계 박스·빈 패치·경로 설정은 [configs/PATCH_DATA.md](configs/PATCH_DATA.md)를 확인하세요.
 
 ## 새 환경의 오프라인 설치 묶음 준비
 

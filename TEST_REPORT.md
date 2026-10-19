@@ -1,5 +1,22 @@
 # 실제 실행 테스트 결과
 
+## 2026-10-19 패치 모드 추가 검증
+
+기존 `original`, `online` 설정은 유지하고 `original_patch`, `online_patch`를 별도 모드로 추가했다. Python 3.12 / torch 2.8.0+cu129 / NumPy 1.26.4 / OpenCV 4.11.0.86 / TensorBoard 2.16.2 환경에서 네트워크 차단 상태로 전체 **128 passed, 4 GPU skipped, 0 failed, 27 warnings**, 47.70초를 확인했다. [`reports/pytest-patch-regression.xml`](reports/pytest-patch-regression.xml)에 전체 결과가 있다.
+
+```bash
+.venv-server-check/bin/python scripts/no_network.py \
+  .venv-server-check/bin/python -m pytest -q --junitxml=reports/pytest-patch-regression.xml
+```
+
+새 패치 테스트는 별도 **15 passed**, 9.30초다([`reports/pytest-patch-modes.xml`](reports/pytest-patch-modes.xml)). 실제 공개 CLI를 별도 작업 디렉터리에서 실행하여 원본 패치 8개/4 iterations, 합성 패치 4개/2 iterations의 CPU 1 epoch를 각각 완료했다. 유한한 양의 탐지 loss, checkpoint 저장, held-out 패치 4개 COCO 평가와 입력 파일 SHA256 불변을 확인했다. 기존 두 모드의 학습·재개·평가 테스트도 전체 실행에 포함했다.
+
+좌표 패턴 이미지에서 실제 crop 픽셀, 오른쪽·아래쪽 마지막 패치, 경계 박스·부분 가시성·최소 크기, 음수 원본 좌표 보정, 빈 패치 정책, 작은 원본의 패딩, annotation과 실제 원본 크기 불일치 오류를 검사했다. category ID 7·29를 사용하는 정답 박스를 다른 모델 입력 크기의 공식 COCO 변환기로 역변환한 뒤 AP=1을 확인하여 패치 평가 좌표와 클래스 대응을 검증했다. 최대 정답 개수 초과 시 조용히 자르지 않고 실패하는 것도 확인했다.
+
+합성은 배경을 원본 픽셀에서 먼저 랜덤 crop한 뒤 객체 5개를 배치한다. 반복 호출의 crop 위치 변화, 동일 seed 재생, 최종 visible mask와 bbox 일치, 증강을 끈 경우 원본 배경 crop과 픽셀 일치, 2 Worker finite loader 재현성, native infinite sampler 배치·no-Mosaic 전환, 두 모드 Preview 저장을 검증했다. 공식 YOLOX 원본 170개 파일은 hash가 동일하다. 새 의존성이나 설치 변경은 없다.
+
+GPU가 없는 환경이므로 실제 CUDA 학습은 검증하지 못했다. 원본 단위 예측 병합 평가도 제공하지 않으며 두 새 모드의 지표는 패치 단위 bbox AP다. 아래는 이전 기능들의 검증 기록이다.
+
 2026-10-14, Debian 13 x86_64 / CPython 3.12.14 / torch 2.8.0+cu129 / torchvision 0.23.0+cu129에서 검증했습니다. GPU가 없는 준비 머신입니다. **CPU 개발·오프라인 설치·두 학습 모드의 진단 실행을 검증했으며, 전체 GPU 학습 호환성은 아직 검증하지 못했습니다.**
 
 ## 전체 결과
