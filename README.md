@@ -131,13 +131,15 @@ python run.py preview --config configs/online_patch.json --output outputs/previe
 
 ## 학습한 모델로 추론하고 박스 그리기
 
-학습할 때 사용한 설정과 입력 이미지 또는 폴더를 지정하세요. 아래 명령은 큰 원본을 패치로 추론하고, 예측 박스를 **원본 크기 사진 한 장에 합쳐** 클래스·신뢰도와 함께 저장합니다. 입력 폴더의 하위 폴더도 검색합니다.
+추론 전용 설정 `configs/predict.json`과 입력 이미지 또는 폴더를 지정하세요. 아래 명령은 큰 원본을 패치로 추론하고, 예측 박스를 **원본 크기 사진 한 장에 합쳐** 클래스·신뢰도와 함께 저장합니다. 입력 폴더의 하위 폴더도 검색합니다.
 
 ```bash
-python run.py predict --config configs/online_patch.json \
+python run.py predict --config configs/predict.json \
   --input /path/to/images --output outputs/predict_v1 \
   --device cuda --tiled
 ```
+
+`predict.json`은 앞서 지정한 5개 차량 클래스(category ID 1~5), nano 모델, 640×640 모델 입력·패치, 512×512 이동 간격으로 준비했습니다. 학습할 때 사용한 `preset`·`num_classes`·클래스 순서와 일치해야 합니다. `output_dir`·`exp_name`은 **학습 가중치를 찾는 위치**로, 기본 경로는 `outputs/online_patch/online_patch_nano/latest_ckpt.pth`입니다. 추론 이미지 저장 위치는 명령의 `--output`으로 지정합니다. 다른 학습 모드의 모델도 해당 모델에 맞춰 이 값들을 수정하거나 `--checkpoint`를 지정하면 사용할 수 있습니다. 학습 설정 JSON을 그대로 `--config`로 지정해도 됩니다.
 
 - `--input /path/to/image.jpg`처럼 이미지 한 장을 지정해도 됩니다.
 - 가중치는 설정의 `output_dir/exp_name/latest_ckpt.pth`를 자동으로 사용합니다. 다른 모델은 `--checkpoint /path/to/best_ckpt.pth`로 지정합니다. 저장된 EMA 가중치가 있으면 기본 사용하며, `--raw-model`을 추가하면 일반 가중치를 사용합니다.

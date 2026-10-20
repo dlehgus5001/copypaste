@@ -1,0 +1,22 @@
+{
+  "mode": "online_patch",
+  "preset": "nano",
+  "num_classes": 5,
+  "class_ids": [1, 2, 3, 4, 5],
+  "class_names": [
+    "3.5ton-Sky-Lift",
+    "5ton-Cargo-Crane",
+    "5ton-Ladder-Truck",
+    "11ton-Cargo-Truck",
+    "25ton-Crane"
+  ],
+  "test_size": [640, 640],
+  "output_dir": "outputs/online_patch",
+  "exp_name": "online_patch_nano",
+  "nmsthre": 0.65,
+  "seed": 42,
+  "patch": {
+    "size": [640, 640],
+    "stride": [512, 512]
+  }
+}
