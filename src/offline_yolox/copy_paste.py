@@ -16,6 +16,7 @@ import torch
 from .bootstrap import local_path
 from .asset_discovery import discover_backgrounds, discover_objects
 from .startup import report, startup_stage
+from .object_effects import apply_object_surface
 from yolox.data.datasets.datasets_wrapper import Dataset
 
 
@@ -157,6 +158,19 @@ class OnlineCopyPasteDataset(Dataset):
                                      "object_contrast_range", minimum=0)
         self.object_appearance_enabled = (self.object_saturation != (1.0, 1.0)
                                           or self.object_contrast != (1.0, 1.0))
+        self.object_blur_sigma = _pair(config.get("object_blur_sigma_range", [0, 0]),
+                                       "object_blur_sigma_range", minimum=0)
+        self.object_dirt_strength = _pair(config.get("object_dirt_strength_range", [0, 0]),
+                                          "object_dirt_strength_range", minimum=0)
+        if self.object_dirt_strength[1] > 1:
+            raise ValueError("object_dirt_strength_range must be between 0 and 1")
+        self.object_dirt_color = config.get("object_dirt_color_bgr", [70, 100, 130])
+        if (not isinstance(self.object_dirt_color, (list, tuple)) or len(self.object_dirt_color) != 3
+                or any(isinstance(v, bool) or not isinstance(v, int) or not 0 <= v <= 255
+                       for v in self.object_dirt_color)):
+            raise ValueError("object_dirt_color_bgr must contain three integers between 0 and 255")
+        self.object_texture_enabled = (self.object_blur_sigma != (0, 0)
+                                       or self.object_dirt_strength != (0, 0))
         with startup_stage("Indexing object/mask files"):
             self.objects = self._read_objects(config.get("objects_manifest", "objects/manifest.json"))
         if self.unique_objects and self.object_count[1] > len(self.objects):
@@ -369,6 +383,23 @@ class OnlineCopyPasteDataset(Dataset):
                     contrast = float(appearance_rng.uniform(*self.object_contrast))
                     rendered_obj = adjust_object_appearance(obj, mask, saturation, contrast)
                     appearance = {"saturation": saturation, "contrast": contrast}
+                if self.object_texture_enabled:
+                    # Independent from geometry and the existing color RNG. Surface
+                    # settings do not change source selection or saturation draws.
+                    texture_seed = int(np.random.SeedSequence([
+                        self._stream_seed, self._calls, source_index, 0xD17,
+                    ]).generate_state(1, dtype=np.uint64)[0])
+                    texture_rng = np.random.default_rng(texture_seed)
+                    sigma = float(texture_rng.uniform(*self.object_blur_sigma))
+                    strength = float(texture_rng.uniform(*self.object_dirt_strength))
+                    rendered_obj = apply_object_surface(
+                        rendered_obj, mask, blur_sigma=sigma, dirt_strength=strength,
+                        dirt_color_bgr=self.object_dirt_color, rng=texture_rng,
+                    )
+                    if appearance is None:
+                        appearance = {}
+                    appearance.update(blur_sigma=sigma, dirt_strength=strength,
+                                      dirt_color_bgr=list(self.object_dirt_color), texture_seed=texture_seed)
                 foreground = rendered_obj[source_y:source_y + bottom - top, source_x:source_x + right - left]
                 region[:] = np.clip(np.rint(foreground * alpha + region * (1 - alpha)), 0, 255).astype(np.uint8)
                 masks = surviving + [visible]

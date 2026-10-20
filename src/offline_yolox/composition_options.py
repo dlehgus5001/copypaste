@@ -22,6 +22,12 @@ def add_composition_arguments(parser):
                        help="Foreground saturation factors: 0=gray, 1=original (default: 1 1)")
     group.add_argument("--object-contrast-range", type=float, nargs=2, metavar=("MIN", "MAX"),
                        help="Foreground contrast factors: values below 1 soften contrast (default: 1 1)")
+    group.add_argument("--object-blur-sigma-range", type=float, nargs=2, metavar=("MIN", "MAX"),
+                       help="Foreground-only Gaussian blur sigma in final object pixels (default: 0 0)")
+    group.add_argument("--object-dirt-strength-range", type=float, nargs=2, metavar=("MIN", "MAX"),
+                       help="Foreground earth-colored stain opacity limits, between 0 and 1 (default: 0 0)")
+    group.add_argument("--object-dirt-color-bgr", type=int, nargs=3, metavar=("B", "G", "R"),
+                       help="Earth layer color, 0..255 BGR (default: 70 100 130)")
     group.add_argument("--unique-objects", action=argparse.BooleanOptionalAction, default=None,
                        help="Select each object/mask source at most once per composite")
     group.add_argument("--require-object-count", action=argparse.BooleanOptionalAction, default=None,
@@ -34,6 +40,7 @@ def composition_config(config, args):
     names = ("asset_root", "objects_dir", "masks_dir", "backgrounds_dir", "mask_suffix",
              "objects_per_image", "object_size", "object_size_range",
              "object_saturation_range", "object_contrast_range",
+             "object_blur_sigma_range", "object_dirt_strength_range", "object_dirt_color_bgr",
              "unique_objects", "require_object_count")
     if not any(getattr(args, name, None) is not None for name in names):
         return values
@@ -75,11 +82,20 @@ def composition_config(config, args):
         value = getattr(args, name, None)
         if value is not None:
             settings[name] = value
-    for name in ("object_saturation_range", "object_contrast_range"):
+    for name in ("object_saturation_range", "object_contrast_range",
+                 "object_blur_sigma_range", "object_dirt_strength_range"):
         value = getattr(args, name, None)
         if value is not None:
             if (len(value) != 2 or any(not math.isfinite(v) or v < 0 for v in value)
                     or value[0] > value[1]):
                 raise ValueError(f"--{name.replace('_', '-')} requires finite 0 <= MIN <= MAX")
             settings[name] = list(value)
+    strength = getattr(args, "object_dirt_strength_range", None)
+    if strength is not None and strength[1] > 1:
+        raise ValueError("--object-dirt-strength-range must be between 0 and 1")
+    color = getattr(args, "object_dirt_color_bgr", None)
+    if color is not None:
+        if any(not 0 <= v <= 255 for v in color):
+            raise ValueError("--object-dirt-color-bgr must contain integers between 0 and 255")
+        settings["object_dirt_color_bgr"] = list(color)
     return values

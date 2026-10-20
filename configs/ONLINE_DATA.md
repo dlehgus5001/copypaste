@@ -121,7 +121,7 @@ Manifest 방식에서 `copy_paste.asset_root`는 객체와 배경의 공통 로�
 
 각 객체마다 범위 안의 실수를 균등하게 선택한다. 채도 1은 원래 색, 0은 회색이고 0.4~0.7은 원래보다 약한 색이다. 대비 1은 원래 대비이며 1 미만은 객체 평균 밝기를 중심으로 차이를 줄인다. 대비는 선명도나 blur를 뜻하지 않는다. 둘 다 생략하거나 `[1, 1]`이면 보정을 하지 않으며 기존 픽셀·metadata·난수 진행을 유지한다. 이 보정은 크기·회전 후 객체 Mask 내부 픽셀에만 적용하고, Mask·박스·클래스·배치 위치를 바꾸지 않는다. 기존 전체 이미지용 밝기·blur·noise 증강은 별도로 이후에 적용된다.
 
-같은 설정·seed·호출 순서·Worker 조건에서 색 보정의 전용 난수를 사용하므로 보정 전후 배경 선택·객체 선택·크기·회전·배치와 Mask는 같다. 객체별 적용 값은 Preview JSON의 `instances[].appearance.saturation`, `contrast`에 기록한다. 실제 촬영 영상과 자동으로 색을 맞추거나 흙 질감을 생성하는 기능은 아니다. 수치는 원본 패치와 나란히 보면서 선택한다.
+같은 설정·seed·호출 순서·Worker 조건에서 색 보정의 전용 난수를 사용하므로 보정 전후 배경 선택·객체 선택·크기·회전·배치와 Mask는 같다. 객체별 적용 값은 Preview JSON의 `instances[].appearance.saturation`, `contrast`에 기록한다. 실제 촬영 영상과 자동으로 색을 맞추는 기능은 아니다. 수치는 원본 패치와 나란히 보면서 선택한다. 흙색 표면 얼룩과 객체 블러는 다음의 별도 옵션을 사용한다.
 
 ```bash
 python run.py preview --config configs/online_patch.json \
@@ -134,6 +134,37 @@ python run.py preview --config configs/online_patch.json \
 ```
 
 `train`, `preview`, `export`의 같은 CLI 옵션이 JSON 값보다 우선하며 해당 실행에만 적용한다. 학습에도 적용하려면 실제 학습 설정의 JSON을 수정하거나 `train`에 같은 옵션을 지정한다. 원본 데이터 파일은 수정하지 않는다.
+
+### 객체 블러와 흙이 묻은 표면
+
+회색으로 색을 빼는 것보다 흙이 묻은 외형이 필요하면 채도는 비교적 유지하고, 표면 얼룩과 객체 전용 블러를 함께 조절한다. 실제 사용하는 설정의 `copy_paste` 안에서 다음 값을 출발점으로 사용할 수 있다.
+
+```json
+"object_saturation_range": [0.8, 1.0],
+"object_contrast_range": [0.9, 1.0],
+"object_blur_sigma_range": [0.4, 0.8],
+"object_dirt_strength_range": [0.2, 0.45],
+"object_dirt_color_bgr": [70, 100, 130]
+```
+
+- `object_blur_sigma_range`는 크기·회전 변환 후 객체 픽셀 기준 Gaussian sigma다. 0이면 끈다. Mask로 정규화한 블러를 사용하여 주변의 검은 픽셀이 객체에 섞여 어두운 테두리가 생기는 것을 방지한다. 기하학적인 Mask 경계는 유지하며, 경계 feathering인 `gaussian_blend_sigma`와는 다르다.
+- `object_dirt_strength_range`는 객체마다 선택하는 흙색 레이어의 최대 국소 불투명도다. 범위는 0~1이며 0이면 끈다. 값이 면적 비율을 뜻하지는 않는다. 거친 얼룩과 더 작은 입자 패턴을 절차적으로 생성해 고르게 칠하는 대신 위치별 강도를 바꾼다.
+- `object_dirt_color_bgr`는 흙색 `[파랑, 초록, 빨강]`이며 0~255 정수다. 기본값은 갈색이다. 밝은 먼지와 짙은 흙 등 실제 데이터의 색에 맞춰 조절한다.
+
+처리 순서는 객체 크기·회전 → 채도·대비 → 흙색 얼룩 → 객체 블러 → 배경과 합성 → 기존 전체 이미지 증강이다. 객체의 표면 색을 바꾸는 효과이며 별도 물체로 가리는 처리가 아니므로 원래 Mask·정답 Box·클래스를 유지한다. 배경을 직접 보정하지 않지만 기존 전체 이미지용 blur·noise·brightness는 계속 별도로 적용된다.
+
+기본 `object_blur_sigma_range`, `object_dirt_strength_range`는 `[0, 0]`이며 이 경우 기존 픽셀·metadata·난수 진행이 같다. 표면 효과는 색 보정·배치와 별도의 난수를 사용하므로 켜고 꺼도 기존 채도·대비 추출값과 객체 배치가 유지된다. 활성화한 경우 Preview JSON의 `instances[].appearance`에 `blur_sigma`, `dirt_strength`, `dirt_color_bgr`, `texture_seed`를 추가한다. 절차적 얼룩이 실제 흙 외형과 일치하거나 탐지 정확도를 개선한다고 검증한 것은 아니므로 실제 원본 패치와 비교해 강도를 조절한다.
+
+JSON을 바꾸지 않고 먼저 확인할 수도 있다.
+
+```bash
+python run.py preview --config configs/online_patch.json \
+  --output outputs/preview_dirt_blur_v1 --count 20 \
+  --object-saturation-range 0.8 1.0 --object-contrast-range 0.9 1.0 \
+  --object-blur-sigma-range 0.4 0.8 --object-dirt-strength-range 0.2 0.45
+```
+
+흙색은 `--object-dirt-color-bgr 70 100 130`으로 바꿀 수 있다. 동일한 옵션을 `train`에도 지정하거나, 지속 적용할 값을 실제 학습 JSON에 기록한다. 출력 폴더는 새 폴더 또는 빈 폴더를 사용한다.
 
 학습 Dataset은 합성 이미지·Mask를 메모리에서 바로 YOLOX로 전달하고 파일을 쓰지 않는다. `train`, `preview`, `export`에서 객체 수·크기를 명령 옵션으로 바꾸면 해당 실행에만 적용한다. 원래 JSON 파일은 수정하지 않는다. `--object-size`와 `--object-size-range`는 함께 지정하지 않는다.
 

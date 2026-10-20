@@ -54,6 +54,8 @@ python run.py train --mode online --config configs/online.json --device cuda \
 
 합성 객체의 색이 너무 선명하면 `preview` 또는 `train` 명령에 `--object-saturation-range 0.4 0.7`을 추가해 객체 채도만 낮출 수 있습니다. 객체 대비도 줄이려면 `--object-contrast-range 0.85 0.95`를 함께 사용합니다. 계속 적용하려면 실제 설정의 `copy_paste`에 `object_saturation_range`, `object_contrast_range`를 저장하세요. 두 옵션의 기본값은 원래 색을 유지하는 `[1, 1]`입니다.
 
+객체에만 약한 블러와 흙색 얼룩을 넣으려면 `--object-blur-sigma-range 0.4 0.8 --object-dirt-strength-range 0.2 0.45`를 추가합니다. 이때 채도는 `--object-saturation-range 0.8 1.0`처럼 비교적 유지한 상태에서 확인할 수 있습니다. 두 효과의 기본값은 `[0, 0]`으로 꺼져 있습니다. 흙색과 JSON 설정은 [객체 블러와 흙이 묻은 표면](configs/ONLINE_DATA.md#객체-블러와-흙이-묻은-표면)을 참고하세요.
+
 기본적으로 같은 객체·마스크 세트를 여러 번 선택할 수 있습니다. 이미지 안에서 서로 다른 세트만 선택하려면 `--unique-objects`를 추가하고 객체 세트를 5개 이상 준비하세요. 객체를 5개 배치할 수 없으면 재시도 후 오류로 알립니다. `preview`와 `export`는 합성 결과를 파일로 확인하거나 반출할 때만 직접 실행하는 선택 도구이며 학습에서 자동 호출하지 않습니다.
 
 각 명령의 옵션은 `python run.py --help`, `python run.py train --help` 등으로 확인합니다. `train --mode original`은 `configs/original.json`, `train --mode online`은 `configs/online.json`을 기본으로 사용합니다. `--config`로 다른 설정을 지정할 수 있으며, 명시한 `--mode`와 설정의 모드가 다르면 오류로 종료합니다. C++ 빌드에는 시스템의 `gcc`·`g++`가 필요하고, 학습·평가 등의 네트워크 차단 실행에는 Linux의 `libseccomp`가 필요합니다.

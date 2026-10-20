@@ -1,5 +1,15 @@
 # 실제 실행 테스트 결과
 
+## 2026-10-20 객체 전용 블러와 흙색 표면 효과
+
+`object_blur_sigma_range`, `object_dirt_strength_range`, `object_dirt_color_bgr` 설정과 CLI 옵션을 추가했다. 크기·회전 및 기존 색 보정 후 객체 Mask 내부에 절차적으로 만든 갈색 얼룩을 적용하고, Mask로 정규화한 Gaussian blur를 적용한다. 표면 색상 변경이며 별도 물체로 가리지 않으므로 Mask·Box·클래스는 유지한다. 두 강도 범위의 기본값 `[0, 0]`은 기존 결과를 유지한다. 표면 효과의 별도 난수와 seed를 사용하고 적용 수치·흙색·seed를 객체 metadata에 기록한다.
+
+같은 Python 3.12 / torch 2.8.0+cu129 / NumPy 1.26.4 / OpenCV 4.11.0.86 / TensorBoard 2.16.2 환경에서 네트워크 차단 상태로 전체 **165 passed, 4 GPU skipped, 0 failed, 31 warnings**, 58.82초를 확인했다. [`reports/pytest-object-surface-regression.xml`](reports/pytest-object-surface-regression.xml)에 결과를 기록했다. 관련 테스트는 **27 passed**, 8.33초이며 [`reports/pytest-object-surface.xml`](reports/pytest-object-surface.xml)에 결과가 있다.
+
+균일 전경의 경계에 검은 halo가 생기지 않는지, 고주파 무늬가 블러로 완화되는지, 갈색 얼룩의 공간 변화·불투명도 한도·seed 재현성, 입력 이미지·Mask·Mask 밖 픽셀 보존을 확인했다. `online`, `online_patch`에서 표면 효과를 켜도 기존 배경·객체 선택·회전·위치·Mask·bbox와 기존 채도·대비 추출값이 동일했다. 표면 효과를 끈 명시적 기본값과 옵션 생략 결과도 같았다. 범위·색상 검증, CLI 설정 복사·우선순위·Original 모드 거부를 확인했다.
+
+기존 0/2 Worker 재현성과 공개 CLI 테스트에 표면 효과를 포함하여 미리보기 metadata, 실제 CPU 학습·검증·checkpoint 및 설정 저장을 확인했다. 기존 전체 회귀 검사와 공식 YOLOX 원본 170개 파일 hash 검증을 통과했다. 실제 항공영상의 흙 외형과 일치하는지, 탐지 성능이 개선되는지는 검증하지 않았으며 GPU 검증도 수행하지 못했다.
+
 ## 2026-10-20 합성 객체 채도·대비 보정
 
 `copy_paste.object_saturation_range`, `object_contrast_range` 및 같은 이름의 CLI 옵션을 추가했다. 객체의 Mask 내부 픽셀에만 보정하며, 마스크·박스·기하학적 변환과 클래스는 유지한다. 기본값 `[1, 1]`은 기존 결과를 유지한다. 채도는 BT.601 밝기와 원래 색 사이의 보간이고, 대비는 전경 평균 밝기를 기준으로 조절한다. 흙 질감 생성이나 실제 촬영 데이터와의 자동 색 정합은 제공하지 않는다.
