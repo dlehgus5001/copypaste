@@ -129,6 +129,15 @@ python run.py preview --config configs/online_patch.json --output outputs/previe
 
 합성 시작 전에 오래 걸리면 실제 사용하는 설정의 `copy_paste`에 `"validate_assets_on_start": false`를 지정하세요. 전체 이미지의 초기 디코딩 대신 선택된 파일을 사용할 때 검사합니다. 새 `online_patch.json`에는 이 값이 들어 있습니다. `[startup]` 로그에서 파일 목록 검사와 검증 패치 구성 중 어느 단계인지 확인할 수 있습니다. `epoch_length`는 학습 분량을 정하며 전체 폴더 검색이나 검증 패치 수를 제한하지 않습니다.
 
+검증 AP가 0이면 저장한 모델로 실제·합성 패치의 예측을 비교할 수 있습니다. 아래 명령은 학습하지 않으며, 실제 설정의 출력 폴더에서 `latest_ckpt.pth`를 찾아 사용합니다. 다른 가중치는 `--checkpoint /로컬/모델.pth`로 지정하세요.
+
+```bash
+python run.py diagnose --config configs/online_patch.json --device cuda \
+  --output outputs/diagnose_v1 --count 8
+```
+
+`real_*_gt.png`·`real_*_pred.png`는 실제 검증 샘플의 정답·예측, `synthetic_*_gt.png`·`synthetic_*_pred.png`는 새 합성 샘플의 정답·예측입니다. `summary.json`에는 체크포인트에 저장된 학습 설정·학습률·예측 개수·최고 score·정답과 맞은 예측 수를 기록합니다. 샘플 진단이며 전체 AP 평가를 대체하지 않습니다. 자세한 해석은 [PATCH_DATA.md](configs/PATCH_DATA.md#검증-ap가-0일-때-진단)를 참고하세요.
+
 ## 새 환경의 오프라인 설치 묶음 준비
 
 GitHub에서 소스를 받는 온라인 준비 머신에서는 아래 순서로 **이미 검증한 버전의 wheel**을 수집합니다. Git에는 대용량 wheelhouse·가상환경·학습 결과가 포함되지 않습니다.

@@ -1,5 +1,15 @@
 # 실제 실행 테스트 결과
 
+## 2026-10-20 AP 0 원인 확인용 체크포인트 진단
+
+`python run.py diagnose`를 추가했다. 실제 검증 샘플과 새로 생성한 합성 샘플에 대해 저장된 checkpoint로 추론하고, 정답·예측 이미지를 따로 저장한다. 체크포인트의 학습 설정·완료 EPOCH·학습률, 현재 합성 설정과의 차이, 필터 전 최고 score, 예측 개수, 클래스 포함/제외 IoU 0.5 매칭을 기록한다. 학습이나 원본·checkpoint 수정은 수행하지 않는다. 소수의 양성 위주 표본에 대한 진단으로 전체 AP 평가를 대체하지 않는다. 진단 NMS의 후보 수 제한과 적용 여부도 기록한다.
+
+같은 Python 3.12 / torch 2.8.0+cu129 / NumPy 1.26.4 / OpenCV 4.11.0.86 / TensorBoard 2.16.2 환경에서 네트워크 차단 상태로 전체 **170 passed, 4 GPU skipped, 0 failed, 31 warnings**, 62.10초를 확인했다. [`reports/pytest-diagnose-regression.xml`](reports/pytest-diagnose-regression.xml)에 결과가 있다. 새 진단 테스트는 **5 passed**, 5.12초이며 [`reports/pytest-diagnose.xml`](reports/pytest-diagnose.xml)에 기록했다.
+
+클래스가 틀린 박스와 중복 예측의 일대일 매칭, 공식 letterbox·NMS 후 정답 좌표 복원, 단일 NMS 후보와 후보 수 제한, confidence 미달 시 빈 예측 및 필터 전 최고 score 보존을 확인했다. 양성 샘플 분산 선택과 빈 샘플 fallback도 확인했다. 별도 작업 디렉터리에서 공개 CLI로 실제 모델 checkpoint를 로드하여 실제·합성 이미지와 summary를 저장하고, EMA 선택·checkpoint 학습 설정과 현재 설정 차이·학습률을 확인했다. checkpoint 파일 bytes가 변하지 않고 기존 출력 덮어쓰기를 거부하는 것도 확인했다.
+
+기존 전체 학습·평가 회귀 테스트와 공식 YOLOX 원본 170개 파일 hash 검증을 통과했다. 실제 사용자 서버의 AP 0 원인은 아직 확인하지 못했으며, 이 도구의 실제 checkpoint·데이터 진단 결과가 필요하다. GPU 진단 실행도 이 머신에서는 검증하지 못했다.
+
 ## 2026-10-20 객체 전용 블러와 흙색 표면 효과
 
 `object_blur_sigma_range`, `object_dirt_strength_range`, `object_dirt_color_bgr` 설정과 CLI 옵션을 추가했다. 크기·회전 및 기존 색 보정 후 객체 Mask 내부에 절차적으로 만든 갈색 얼룩을 적용하고, Mask로 정규화한 Gaussian blur를 적용한다. 표면 색상 변경이며 별도 물체로 가리지 않으므로 Mask·Box·클래스는 유지한다. 두 강도 범위의 기본값 `[0, 0]`은 기존 결과를 유지한다. 표면 효과의 별도 난수와 seed를 사용하고 적용 수치·흙색·seed를 객체 metadata에 기록한다.
