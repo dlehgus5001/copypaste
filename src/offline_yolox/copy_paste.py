@@ -7,6 +7,7 @@ Boxes use half-open pixel bounds, calculated from final visible ownership masks.
 import json
 import random
 from pathlib import Path
+from time import monotonic
 
 import cv2
 import numpy as np
@@ -14,6 +15,7 @@ import torch
 
 from .bootstrap import local_path
 from .asset_discovery import discover_backgrounds, discover_objects
+from .startup import report, startup_stage
 from yolox.data.datasets.datasets_wrapper import Dataset
 
 
@@ -88,6 +90,8 @@ class OnlineCopyPasteDataset(Dataset):
         if len(self.class_ids) != len(self.class_names) or len(set(self.class_ids)) != len(self.class_ids):
             raise ValueError("Class IDs and names must form a unique shared taxonomy")
         self.class_index = {category_id: index for index, category_id in enumerate(self.class_ids)}
+        self.validate_assets_on_start = self._boolean(
+            config.get("validate_assets_on_start", True), "validate_assets_on_start")
         self.epoch_length = self._positive_int(config.get("epoch_length", 1000), "epoch_length")
         self.object_count = _pair(config.get("object_count", [1, 5]), "object_count", integer=True, minimum=0)
         self.unique_objects = self._boolean(config.get("unique_objects", False), "unique_objects")
@@ -129,10 +133,15 @@ class OnlineCopyPasteDataset(Dataset):
         self.blur_sigma = self._nonnegative(config.get("blur_sigma", 0.0), "blur_sigma")
         self.noise_std = self._nonnegative(config.get("noise_std", 0.0), "noise_std")
         self.brightness = _pair(config.get("brightness_range", [1.0, 1.0]), "brightness_range", minimum=0.01)
-        self.objects = self._read_objects(config.get("objects_manifest", "objects/manifest.json"))
+        with startup_stage("Indexing object/mask files"):
+            self.objects = self._read_objects(config.get("objects_manifest", "objects/manifest.json"))
         if self.unique_objects and self.object_count[1] > len(self.objects):
             raise ValueError("object_count maximum must not exceed available distinct object image/mask sources when unique_objects is true")
-        self.backgrounds = self._read_backgrounds(config.get("backgrounds_manifest", "backgrounds/manifest.json"))
+        with startup_stage("Indexing background files"):
+            self.backgrounds = self._read_backgrounds(config.get("backgrounds_manifest", "backgrounds/manifest.json"))
+        report(f"Assets ready: {len(self.objects)} object/mask pairs, {len(self.backgrounds)} backgrounds; "
+               f"epoch_length={self.epoch_length}; pixel checks="
+               f"{'all at startup' if self.validate_assets_on_start else 'when selected'}")
         self._rng = None
         self._stream_key = None
         self._calls = 0
@@ -209,9 +218,16 @@ class OnlineCopyPasteDataset(Dataset):
             )
         else:
             entries = self._read_manifest(name)
-        for entry in entries:
+        report(f"Found {len(entries)} object/mask pairs; "
+               f"{'decoding all files' if self.validate_assets_on_start else 'checking paths/classes without decoding'}")
+        last_report = float("-inf")
+        for index, entry in enumerate(entries):
             if not isinstance(entry, dict) or not all(k in entry for k in ("image", "mask", "category_id")):
                 raise ValueError("Object entries require image, mask and category_id")
+            now = monotonic()
+            if now - last_report >= 5:
+                report(f"Checking object/mask {index + 1}/{len(entries)}: {entry['image']}")
+                last_report = now
             category = entry["category_id"]
             if isinstance(category, bool) or not isinstance(category, int) or category not in self.class_index:
                 raise ValueError(f"Object category_id {category} is absent from the validation COCO taxonomy")
@@ -220,8 +236,9 @@ class OnlineCopyPasteDataset(Dataset):
             if self.unique_objects and source_key in seen_sources:
                 raise ValueError("unique_objects requires distinct image/mask sources; the object manifest contains a duplicate pair")
             seen_sources.add(source_key)
-            image = self._read_image(image_path)
-            self._read_mask(mask_path, image.shape[:2])
+            if self.validate_assets_on_start:
+                image = self._read_image(image_path)
+                self._read_mask(mask_path, image.shape[:2])
             result.append({"image": entry["image"], "mask": entry["mask"], "category_id": category,
                            "image_path": str(image_path), "mask_path": str(mask_path)})
         return result
@@ -230,9 +247,17 @@ class OnlineCopyPasteDataset(Dataset):
         result = []
         entries = (discover_backgrounds(self.asset_root, self.config["backgrounds_dir"])
                    if "backgrounds_dir" in self.config else self._read_manifest(name))
-        for entry in entries:
+        report(f"Found {len(entries)} backgrounds; "
+               f"{'decoding all files' if self.validate_assets_on_start else 'checking paths without decoding'}")
+        last_report = float("-inf")
+        for index, entry in enumerate(entries):
+            now = monotonic()
+            if now - last_report >= 5:
+                report(f"Checking background {index + 1}/{len(entries)}: {entry}")
+                last_report = now
             path = self._asset_path(entry)
-            self._read_image(path)
+            if self.validate_assets_on_start:
+                self._read_image(path)
             result.append({"image": entry, "image_path": str(path)})
         return result
 

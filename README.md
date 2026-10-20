@@ -123,6 +123,8 @@ python run.py preview --config configs/online_patch.json --output outputs/previe
 
 학습 중 패치 이미지나 새 COCO JSON을 디스크에 저장하지 않습니다. 검증도 같은 크기의 격자 패치에서 수행하므로 **AP는 패치 기준**이며 전체 이미지로 예측을 합치는 평가는 아닙니다. 경계 박스·빈 패치·경로 설정은 [configs/PATCH_DATA.md](configs/PATCH_DATA.md)를 확인하세요.
 
+합성 시작 전에 오래 걸리면 실제 사용하는 설정의 `copy_paste`에 `"validate_assets_on_start": false`를 지정하세요. 전체 이미지의 초기 디코딩 대신 선택된 파일을 사용할 때 검사합니다. 새 `online_patch.json`에는 이 값이 들어 있습니다. `[startup]` 로그에서 파일 목록 검사와 검증 패치 구성 중 어느 단계인지 확인할 수 있습니다. `epoch_length`는 학습 분량을 정하며 전체 폴더 검색이나 검증 패치 수를 제한하지 않습니다.
+
 ## 새 환경의 오프라인 설치 묶음 준비
 
 GitHub에서 소스를 받는 온라인 준비 머신에서는 아래 순서로 **이미 검증한 버전의 wheel**을 수집합니다. Git에는 대용량 wheelhouse·가상환경·학습 결과가 포함되지 않습니다.

@@ -90,7 +90,7 @@ Manifest 방식에서 `copy_paste.asset_root`는 객체와 배경의 공통 로�
 
 ## 이미지·마스크와 합성 설정
 
-폴더 입력과 Manifest 입력 모두 같은 이미지 조건을 사용한다. 객체 이미지는 uint8 3채널 컬러 이미지 또는 4채널 PNG다. 4채널 이미지의 alpha 대신 별도 Mask를 사용한다. Mask는 이미지와 같은 높이·폭의 uint8 단일 채널 이진 이미지다. 0은 배경, 1 또는 255는 전경이며 비어 있거나 중간 회색 값이 있으면 거부한다. 설정 초기화 때 모든 파일의 존재 여부, 디코딩, Mask 정합성, category를 검사한다. SAM3의 연속 확률 Mask는 신뢰할 수 있는 임곗값으로 별도 이진화한 뒤 제공한다. 배경은 `input_size`의 높이·폭으로 크기를 변경하므로 같은 종횡비로 준비하는 것을 권장한다. 배경에 원래 있던 객체는 합성 label에 포함되지 않는다.
+폴더 입력과 Manifest 입력 모두 같은 이미지 조건을 사용한다. 객체 이미지는 uint8 3채널 컬러 이미지 또는 4채널 PNG다. 4채널 이미지의 alpha 대신 별도 Mask를 사용한다. Mask는 이미지와 같은 높이·폭의 uint8 단일 채널 이진 이미지다. 0은 배경, 1 또는 255는 전경이며 비어 있거나 중간 회색 값이 있으면 거부한다. 기본적으로 설정 초기화 때 모든 파일의 존재 여부, 디코딩, Mask 정합성, category를 검사한다. `copy_paste.validate_assets_on_start: false`이면 시작할 때 경로·파일 대응·category를 검사하고, 이미지·마스크의 디코딩·자료형·크기·이진값·전경 검사는 선택된 파일을 합성에 사용할 때 수행한다. 손상된 파일을 자동 제외하지 않으며 선택 시 오류로 알린다. 이 옵션의 생략 기본값은 `true`이고 새 `online_patch.json`은 `false`로 설정한다. SAM3의 연속 확률 Mask는 신뢰할 수 있는 임곗값으로 별도 이진화한 뒤 제공한다. 배경은 `input_size`의 높이·폭으로 크기를 변경하므로 같은 종횡비로 준비하는 것을 권장한다. 배경에 원래 있던 객체는 합성 label에 포함되지 않는다.
 
 `epoch_length`는 한 Epoch에서 생성할 합성 샘플 수다. 각 Dataset 호출은 같은 index여도 새 배경·객체·크기·각도·위치를 선택한다. Native Trainer는 공식 `InfiniteSampler`를 사용하고 한 Epoch의 iteration 수는 `ceil(epoch_length / batch_size)`다. 마지막 배치 크기까지 일정하므로 필요하면 `epoch_length`를 `batch_size`의 배수로 둔다. CPU 진단은 유한 Sampler로 정확히 `epoch_length`개를 소비한다. Online 모드에는 Mosaic/MixUp을 추가하지 않는다. 모델, Loss, SGD, Scheduler, EMA와 실제 COCO 검증은 Original 모드와 공유한다.
 

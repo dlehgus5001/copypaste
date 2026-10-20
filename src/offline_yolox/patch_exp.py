@@ -6,6 +6,7 @@ import torch
 from .experiment import OfflineExp, seed_worker
 from .online_exp import OnlineExp
 from .patch_data import CocoPatchDataset, OnlinePatchDataset, patch_settings
+from .startup import report, startup_stage
 
 
 class PatchEvaluation:
@@ -14,11 +15,14 @@ class PatchEvaluation:
 
     def get_eval_dataset(self, **kwargs):
         from yolox.data import ValTransform
-        return self._check_dataset(CocoPatchDataset(
-            data_dir=self.data_dir, json_file=self.val_ann, name=self.val_name,
-            input_size=self.test_size, settings=self.patch, training=False,
-            preproc=ValTransform(legacy=kwargs.get("legacy", False)),
-        ))
+        with startup_stage(f"Building validation patch index: {self.val_ann}"):
+            dataset = self._check_dataset(CocoPatchDataset(
+                data_dir=self.data_dir, json_file=self.val_ann, name=self.val_name,
+                input_size=self.test_size, settings=self.patch, training=False,
+                preproc=ValTransform(legacy=kwargs.get("legacy", False)),
+            ))
+        report(f"Validation ready: {len(dataset)} patches (separate from training epoch_length)")
+        return dataset
 
 
 class OriginalPatchExp(PatchEvaluation, OfflineExp):

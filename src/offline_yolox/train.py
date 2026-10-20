@@ -11,6 +11,7 @@ import torch
 from .bootstrap import local_path
 from .composition_options import add_composition_arguments, composition_config
 from .experiment import create_exp, read_config, seed_everything
+from .startup import report as startup_report, startup_stage
 
 
 def rng_state():
@@ -283,11 +284,13 @@ def main(argv=None):
         values = composition_config(values, args)
     except ValueError as error:
         parser.error(str(error))
+    startup_report(f"config={local_path(config)}; mode={values.get('mode', 'original')}; device={args.device}")
     if args.device == "cuda" and not torch.cuda.is_available():
         raise RuntimeError("CUDA is unavailable. GPU training requires a CUDA GPU; --device cpu explicitly runs the diagnostic harness.")
     if args.device == "cpu" and args.fp16:
         parser.error("--fp16 requires CUDA")
-    exp = create_exp(values)
+    with startup_stage("Preparing experiment, COCO classes and training data"):
+        exp = create_exp(values)
     seed_everything(exp.seed)
     if args.device == "cpu":
         if args.cpu_threads <= 0:

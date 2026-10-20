@@ -1,5 +1,15 @@
 # 실제 실행 테스트 결과
 
+## 2026-10-20 합성 시작 전 전체 디코딩 지연 개선
+
+`copy_paste.validate_assets_on_start: false`를 추가했다. 파일 경로·객체/마스크 대응·클래스 검사는 시작할 때 유지하고, 픽셀 디코딩·자료형·크기·마스크 이진값·전경 검사는 실제 선택된 파일을 합성할 때 수행한다. 옵션 생략 시 기존 전체 초기 검사를 유지하며, 새 `online_patch.json`에는 `false`를 명시했다. 초기 처리 단계와 소요 시간, 실제 설정 경로, 파일 개수와 검증 패치 수를 `[startup]` 로그로 표시한다.
+
+Python 3.12 / torch 2.8.0+cu129 / NumPy 1.26.4 / OpenCV 4.11.0.86 / TensorBoard 2.16.2 환경에서 네트워크 차단 상태로 전체 **138 passed, 4 GPU skipped, 0 failed, 27 warnings**, 50.68초를 확인했다. [`reports/pytest-startup-regression.xml`](reports/pytest-startup-regression.xml)에 결과가 있다. 새 관련 테스트는 별도 **10 passed**, 6.16초이며 [`reports/pytest-startup.xml`](reports/pytest-startup.xml)에 기록했다.
+
+6개 객체/마스크 세트와 배경 4개를 가진 샘플에서 기존 초기화는 디코딩 16회, 새 옵션은 0회였다. 단일 객체를 선택한 합성 호출에서는 필요한 배경·객체·마스크 3개만 읽었다. 같은 입력과 seed에서 기존 검사 방식과 합성 픽셀·박스·metadata가 완전히 같음을 `online`, `online_patch` 모두 확인했다. 이 수치는 디코딩 호출 수이며 실제 내부 서버의 시작 시간 개선 비율을 측정한 결과는 아니다.
+
+비이진 마스크와 손상 배경은 선택 시 오류를 내고, 없는 마스크·미해결 클래스는 초기화 단계에서 계속 거부한다. 설정 값의 boolean 검증, 템플릿 재사용 시 불필요한 디코딩 없음, 실제 공개 CLI의 CPU 학습·checkpoint·held-out 평가 및 시작 로그도 검사했다. 기존 학습·Preview 테스트를 포함한 전체 회귀 검사와 공식 YOLOX 원본 170개 파일의 hash 검증을 통과했다. GPU 속도는 실제 서버에서 확인해야 한다. 폴더 검색·경로 검사·COCO JSON 읽기·검증 patch metadata 구성 비용과 전체 검증 분량은 이 옵션으로 제거되지 않는다.
+
 ## 2026-10-19 패치 모드 추가 검증
 
 기존 `original`, `online` 설정은 유지하고 `original_patch`, `online_patch`를 별도 모드로 추가했다. Python 3.12 / torch 2.8.0+cu129 / NumPy 1.26.4 / OpenCV 4.11.0.86 / TensorBoard 2.16.2 환경에서 네트워크 차단 상태로 전체 **128 passed, 4 GPU skipped, 0 failed, 27 warnings**, 47.70초를 확인했다. [`reports/pytest-patch-regression.xml`](reports/pytest-patch-regression.xml)에 전체 결과가 있다.

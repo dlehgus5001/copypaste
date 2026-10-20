@@ -23,6 +23,7 @@
   "exp_name": "online_patch_nano",
   "ema": true,
   "copy_paste": {
+    "validate_assets_on_start": false,
     "asset_root": "data/assets",
     "objects_dir": "object",
     "masks_dir": "mask",

@@ -23,7 +23,8 @@ class OnlineExp(OfflineExp):
         if not isinstance(config.get("copy_paste"), dict):
             raise ValueError("Online mode requires a copy_paste configuration object")
         self.copy_paste = dict(config["copy_paste"])
-        # Fail early on incorrect assets/taxonomy rather than inside worker processes.
+        # Resolve paths/taxonomy now; optional eager pixel checks are controlled
+        # by copy_paste.validate_assets_on_start. Selected pixels are always checked.
         self._dataset_template = self.get_dataset()
 
     def get_dataset(self, cache=False, cache_type="ram", epoch=0):
