@@ -129,6 +129,28 @@ python run.py preview --config configs/online_patch.json --output outputs/previe
 
 합성 시작 전에 오래 걸리면 실제 사용하는 설정의 `copy_paste`에 `"validate_assets_on_start": false`를 지정하세요. 전체 이미지의 초기 디코딩 대신 선택된 파일을 사용할 때 검사합니다. 새 `online_patch.json`에는 이 값이 들어 있습니다. `[startup]` 로그에서 파일 목록 검사와 검증 패치 구성 중 어느 단계인지 확인할 수 있습니다. `epoch_length`는 학습 분량을 정하며 전체 폴더 검색이나 검증 패치 수를 제한하지 않습니다.
 
+## 학습한 모델로 추론하고 박스 그리기
+
+학습할 때 사용한 설정과 입력 이미지 또는 폴더를 지정하세요. 아래 명령은 큰 원본을 패치로 추론하고, 예측 박스를 **원본 크기 사진 한 장에 합쳐** 클래스·신뢰도와 함께 저장합니다. 입력 폴더의 하위 폴더도 검색합니다.
+
+```bash
+python run.py predict --config configs/online_patch.json \
+  --input /path/to/images --output outputs/predict_v1 \
+  --device cuda --tiled
+```
+
+- `--input /path/to/image.jpg`처럼 이미지 한 장을 지정해도 됩니다.
+- 가중치는 설정의 `output_dir/exp_name/latest_ckpt.pth`를 자동으로 사용합니다. 다른 모델은 `--checkpoint /path/to/best_ckpt.pth`로 지정합니다. 저장된 EMA 가중치가 있으면 기본 사용하며, `--raw-model`을 추가하면 일반 가중치를 사용합니다.
+- 패치 크기·간격은 설정의 `patch.size`·`patch.stride`를 사용합니다. 예를 들어 `--patch-size 640 640 --stride 512 512`로 덮어쓸 수 있습니다. 겹친 패치의 예측은 원본 좌표로 옮긴 뒤 클래스별 NMS로 중복 제거합니다. `--batch-size 8`은 한 번에 추론할 최대 패치 수입니다.
+- `--tiled`를 빼면 전체 사진을 설정의 `test_size`에 맞춰 축소·패딩하여 한 번에 추론합니다. 큰 원본의 작은 객체는 패치 추론을 권장합니다.
+- 기본 표시 기준은 `--confidence 0.25`입니다. 낮은 점수의 예측도 확인하려면 `--confidence 0.01`로 실행하세요. 이 값은 표시할 예측을 고르는 기준입니다.
+
+`outputs/predict_v1/원본.jpg.pred.png`에 박스가 그려진 이미지, `원본.jpg.pred.json`에 원본 픽셀 기준 `bbox_xyxy`·클래스·점수를 저장합니다. 하위 폴더 구조를 유지하며, 예측이 없으면 박스 없는 이미지를 저장합니다. `summary.json`에는 사용한 모델과 설정·파일별 예측 개수를 기록합니다. 재실행할 때는 새 출력 폴더를 사용하세요.
+
+정답 박스나 합성 자산은 필요하지 않습니다. 클래스 이름은 설정의 `class_names` 또는 존재하는 검증 COCO JSON의 `categories`에서 읽습니다. 둘 다 없으면 `class_0`, `class_1`처럼 표시합니다. 별도 이름을 지정할 때는 학습 때의 내부 클래스 순서(COCO category ID 오름차순)에 맞추세요. 원본 디코딩은 OpenCV의 기본 EXIF 방향 처리를 따르며, 방향 처리를 끄려면 `--ignore-exif-orientation`을 추가합니다. 이 명령은 추론 결과를 저장하며 AP를 계산하지 않습니다.
+
+## 실제·합성 샘플 예측 비교
+
 검증 AP가 0이면 저장한 모델로 실제·합성 패치의 예측을 비교할 수 있습니다. 아래 명령은 학습하지 않으며, 실제 설정의 출력 폴더에서 `latest_ckpt.pth`를 찾아 사용합니다. 다른 가중치는 `--checkpoint /로컬/모델.pth`로 지정하세요.
 
 ```bash

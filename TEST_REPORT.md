@@ -1,5 +1,15 @@
 # 실제 실행 테스트 결과
 
+## 2026-10-20 일반 이미지·폴더 추론과 박스 저장
+
+`python run.py predict`를 추가했다. 이미지 한 장 또는 폴더를 재귀적으로 읽고 저장한 YOLOX checkpoint로 추론하여 원본 크기 이미지에 예측 박스·클래스·점수를 그린다. 전체 이미지 추론과 패치 배치 추론을 지원한다. 패치 예측은 letterbox 비율·원본 crop 위치를 역변환하고 실제 이미지 영역으로 잘라 클래스별 NMS로 합친다. 파일별 원본 좌표 JSON과 실행 summary를 저장하며, 정답 박스·학습 데이터·합성 자산을 초기화하지 않는다. 클래스 이름을 얻을 때만 존재하는 검증 JSON의 categories를 읽을 수 있다. EMA 기본 선택과 일반 가중치 선택을 지원한다.
+
+Python 3.12 / torch 2.8.0+cu129 / NumPy 1.26.4 / OpenCV 4.11.0.86 / TensorBoard 2.16.2 환경에서 네트워크 차단 상태로 전체 **182 passed, 4 GPU skipped, 0 failed, 31 warnings**, 67.92초를 확인했다. [`reports/pytest-predict-regression.xml`](reports/pytest-predict-regression.xml)에 결과를 기록했다. 추론 전용 테스트는 **12 passed**, 6.25초이며 [`reports/pytest-predict.xml`](reports/pytest-predict.xml)에 결과가 있다.
+
+단일 후보·빈 예측, 전체 이미지 좌표 복원, 배치 크기별 패치 offset 및 겹친 예측 제거, 다른 클래스 유지, 작은 원본의 패딩 영역 예측 제거를 확인했다. 실제 공식 nano 모델 checkpoint를 사용한 공개 CLI를 별도 작업 디렉터리에서 실행하여 Unicode·공백 경로의 폴더 입력, 하위 폴더 유지, 같은 stem의 다른 확장자 충돌 방지, 박스가 그려진 이미지와 JSON 저장을 확인했다. 없는 학습·합성 폴더에서도 추론했고 EMA/일반 가중치 선택, EXIF 방향 정책, category ID 및 클래스 이름 fallback, 입력·가중치 불변과 출력 덮어쓰기 거부를 검증했다.
+
+공식 YOLOX 원본 170개 파일 hash 검증과 기존 전체 학습·평가 회귀 검사를 통과했다. 정확도 검증용으로 학습한 실제 사용자 모델은 이 환경에 없으며, 테스트용 checkpoint의 예측은 좌표·입출력 검사용이다. 실제 데이터 탐지 성능과 GPU 추론은 이 머신에서 검증하지 못했다. 패치 예측을 원본으로 합치는 추론을 제공하며, 기존 검증 AP의 계산 방식은 바꾸지 않았다.
+
 ## 2026-10-20 AP 0 원인 확인용 체크포인트 진단
 
 `python run.py diagnose`를 추가했다. 실제 검증 샘플과 새로 생성한 합성 샘플에 대해 저장된 checkpoint로 추론하고, 정답·예측 이미지를 따로 저장한다. 체크포인트의 학습 설정·완료 EPOCH·학습률, 현재 합성 설정과의 차이, 필터 전 최고 score, 예측 개수, 클래스 포함/제외 IoU 0.5 매칭을 기록한다. 학습이나 원본·checkpoint 수정은 수행하지 않는다. 소수의 양성 위주 표본에 대한 진단으로 전체 AP 평가를 대체하지 않는다. 진단 NMS의 후보 수 제한과 적용 여부도 기록한다.

@@ -18,6 +18,7 @@ COMMANDS = {
     "export": ["-m", "offline_yolox.export"],
     "evaluate": ["-m", "offline_yolox.evaluate"],
     "diagnose": ["-m", "offline_yolox.diagnose"],
+    "predict": ["-m", "offline_yolox.predict"],
     "validate-gpu": ["scripts/validate_gpu.py"],
 }
 
