@@ -110,6 +110,31 @@ Manifest 방식에서 `copy_paste.asset_root`는 객체와 배경의 공통 로�
 
 새 객체는 기존 객체의 ownership Mask에서 겹친 전경을 제거한다. 마지막 visible Mask로 Box를 다시 계산하기 때문에 회전·잘림·가림 뒤에도 정합성을 유지한다. Box 형식은 `[xmin, ymin, xmax, ymax]`이며 xmax/ymax는 마지막 전경 pixel의 좌표 + 1이다. 모든 label은 서로 겹치지 않는 최종 visible Mask와 대응한다. `gaussian_blend_sigma`는 Mask 내부 경계를 부드럽게 하는 inward feathering이다. Blend의 낮은 alpha에서도 전경 소유권은 나중 객체에 있다. `blur_sigma`, `noise_std`, `brightness_range`는 선택적 전체 이미지 증강이며 기하학적 label은 바꾸지 않는다.
 
+### 합성 객체의 색상이 너무 선명할 때
+
+객체에만 채도·대비 보정을 적용하려면 `copy_paste` 안에 아래 항목을 추가한다.
+
+```json
+"object_saturation_range": [0.4, 0.7],
+"object_contrast_range": [0.85, 0.95]
+```
+
+각 객체마다 범위 안의 실수를 균등하게 선택한다. 채도 1은 원래 색, 0은 회색이고 0.4~0.7은 원래보다 약한 색이다. 대비 1은 원래 대비이며 1 미만은 객체 평균 밝기를 중심으로 차이를 줄인다. 대비는 선명도나 blur를 뜻하지 않는다. 둘 다 생략하거나 `[1, 1]`이면 보정을 하지 않으며 기존 픽셀·metadata·난수 진행을 유지한다. 이 보정은 크기·회전 후 객체 Mask 내부 픽셀에만 적용하고, Mask·박스·클래스·배치 위치를 바꾸지 않는다. 기존 전체 이미지용 밝기·blur·noise 증강은 별도로 이후에 적용된다.
+
+같은 설정·seed·호출 순서·Worker 조건에서 색 보정의 전용 난수를 사용하므로 보정 전후 배경 선택·객체 선택·크기·회전·배치와 Mask는 같다. 객체별 적용 값은 Preview JSON의 `instances[].appearance.saturation`, `contrast`에 기록한다. 실제 촬영 영상과 자동으로 색을 맞추거나 흙 질감을 생성하는 기능은 아니다. 수치는 원본 패치와 나란히 보면서 선택한다.
+
+```bash
+python run.py preview --config configs/online_patch.json \
+  --output outputs/preview_color_before --count 20 \
+  --object-saturation-range 1 1 --object-contrast-range 1 1
+
+python run.py preview --config configs/online_patch.json \
+  --output outputs/preview_color_after --count 20 \
+  --object-saturation-range 0.4 0.7 --object-contrast-range 0.85 0.95
+```
+
+`train`, `preview`, `export`의 같은 CLI 옵션이 JSON 값보다 우선하며 해당 실행에만 적용한다. 학습에도 적용하려면 실제 학습 설정의 JSON을 수정하거나 `train`에 같은 옵션을 지정한다. 원본 데이터 파일은 수정하지 않는다.
+
 학습 Dataset은 합성 이미지·Mask를 메모리에서 바로 YOLOX로 전달하고 파일을 쓰지 않는다. `train`, `preview`, `export`에서 객체 수·크기를 명령 옵션으로 바꾸면 해당 실행에만 적용한다. 원래 JSON 파일은 수정하지 않는다. `--object-size`와 `--object-size-range`는 함께 지정하지 않는다.
 
 ```bash

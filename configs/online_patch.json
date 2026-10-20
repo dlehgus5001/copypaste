@@ -44,6 +44,8 @@
     "placement_attempts": 30,
     "max_labels": 120,
     "gaussian_blend_sigma": 0.6,
+    "object_saturation_range": [1.0, 1.0],
+    "object_contrast_range": [1.0, 1.0],
     "blur_sigma": 0.3,
     "noise_std": 1.0,
     "brightness_range": [0.9, 1.1]

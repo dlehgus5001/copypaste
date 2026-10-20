@@ -1,5 +1,15 @@
 # 실제 실행 테스트 결과
 
+## 2026-10-20 합성 객체 채도·대비 보정
+
+`copy_paste.object_saturation_range`, `object_contrast_range` 및 같은 이름의 CLI 옵션을 추가했다. 객체의 Mask 내부 픽셀에만 보정하며, 마스크·박스·기하학적 변환과 클래스는 유지한다. 기본값 `[1, 1]`은 기존 결과를 유지한다. 채도는 BT.601 밝기와 원래 색 사이의 보간이고, 대비는 전경 평균 밝기를 기준으로 조절한다. 흙 질감 생성이나 실제 촬영 데이터와의 자동 색 정합은 제공하지 않는다.
+
+Python 3.12 / torch 2.8.0+cu129 / NumPy 1.26.4 / OpenCV 4.11.0.86 / TensorBoard 2.16.2 환경에서 네트워크 차단 상태로 전체 **155 passed, 4 GPU skipped, 0 failed, 31 warnings**, 58.11초를 확인했다. [`reports/pytest-object-appearance-regression.xml`](reports/pytest-object-appearance-regression.xml)에 전체 결과를 기록했다. 새 관련 테스트는 별도 **17 passed**, 9.38초이며 [`reports/pytest-object-appearance.xml`](reports/pytest-object-appearance.xml)에 결과가 있다.
+
+채도 0의 회색 변환과 대비 감소, 입력 이미지·Mask 불변, Mask 밖 픽셀 보존을 확인했다. `online`, `online_patch` 모두 0개/5개 객체 사례에서 기본·항등 보정 결과가 같고, 색 보정의 전용 RNG를 사용할 때 기존과 같은 배경·객체 선택·크기·회전·위치·visible mask·bbox를 유지했다. 전체 이미지 증강을 끈 비교에서 Mask 밖 배경 픽셀도 동일했다. 0/2 Worker 새 Loader에서 재현성을 확인했고 잘못된 수치·범위와 Original 모드 CLI 사용을 거부했다.
+
+공개 Python CLI에서 보정 옵션을 지정한 미리보기 파일과 객체별 적용 metadata를 확인하고, 실제 CPU 1 epoch·유한 loss·검증·checkpoint 저장 및 유효 설정 기록을 확인했다. 기존 학습·평가·Preview·export 회귀 테스트와 공식 YOLOX 원본 170개 파일 hash 검증도 통과했다. GPU 검증과 실제 항공영상에서의 외형 정합·정확도 개선은 수행하지 않았다.
+
 ## 2026-10-20 합성 시작 전 전체 디코딩 지연 개선
 
 `copy_paste.validate_assets_on_start: false`를 추가했다. 파일 경로·객체/마스크 대응·클래스 검사는 시작할 때 유지하고, 픽셀 디코딩·자료형·크기·마스크 이진값·전경 검사는 실제 선택된 파일을 합성할 때 수행한다. 옵션 생략 시 기존 전체 초기 검사를 유지하며, 새 `online_patch.json`에는 `false`를 명시했다. 초기 처리 단계와 소요 시간, 실제 설정 경로, 파일 개수와 검증 패치 수를 `[startup]` 로그로 표시한다.

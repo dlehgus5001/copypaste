@@ -56,6 +56,24 @@ def transform_object(image, mask, long_side_pixels, rotation_degrees):
     return np.ascontiguousarray(image[y1:y2, x1:x2]), np.ascontiguousarray(mask[y1:y2, x1:x2])
 
 
+def adjust_object_appearance(image, mask, saturation=1.0, contrast=1.0):
+    """Adjust foreground color only; preserve mask, geometry and outside pixels.
+
+    Saturation interpolates BGR toward BT.601 luminance. Contrast is centered on
+    the foreground's mean luminance, rather than on the surrounding background.
+    """
+    if saturation == 1.0 and contrast == 1.0:
+        return image
+    pixels = image[mask].astype(np.float32)
+    luminance = pixels @ np.array([0.114, 0.587, 0.299], dtype=np.float32)
+    adjusted = luminance[:, None] + saturation * (pixels - luminance[:, None])
+    pivot = float(luminance.mean())
+    adjusted = pivot + contrast * (adjusted - pivot)
+    result = image.copy()
+    result[mask] = np.clip(np.rint(adjusted), 0, 255).astype(np.uint8)
+    return result
+
+
 def _pair(value, name, *, integer=False, minimum=None):
     if not isinstance(value, (list, tuple)) or len(value) != 2:
         raise ValueError(f"{name} must contain a minimum and maximum")
@@ -133,6 +151,12 @@ class OnlineCopyPasteDataset(Dataset):
         self.blur_sigma = self._nonnegative(config.get("blur_sigma", 0.0), "blur_sigma")
         self.noise_std = self._nonnegative(config.get("noise_std", 0.0), "noise_std")
         self.brightness = _pair(config.get("brightness_range", [1.0, 1.0]), "brightness_range", minimum=0.01)
+        self.object_saturation = _pair(config.get("object_saturation_range", [1.0, 1.0]),
+                                       "object_saturation_range", minimum=0)
+        self.object_contrast = _pair(config.get("object_contrast_range", [1.0, 1.0]),
+                                     "object_contrast_range", minimum=0)
+        self.object_appearance_enabled = (self.object_saturation != (1.0, 1.0)
+                                          or self.object_contrast != (1.0, 1.0))
         with startup_stage("Indexing object/mask files"):
             self.objects = self._read_objects(config.get("objects_manifest", "objects/manifest.json"))
         if self.unique_objects and self.object_count[1] > len(self.objects):
@@ -293,6 +317,11 @@ class OnlineCopyPasteDataset(Dataset):
         image = self._background_canvas(rng, background)
         masks, instances = [], []
         rejected = 0
+        # Appearance uses its own RNG so changing color settings keeps background,
+        # source selection, placement, rotation, masks and global augmentation draws.
+        appearance_rng = (np.random.default_rng(np.random.SeedSequence([
+            self._stream_seed, self._calls, 0xC0104,
+        ])) if self.object_appearance_enabled else None)
         source_indices = rng.choice(len(self.objects), size=count, replace=False) if self.unique_objects else None
         for source_index in range(count):
             source = self.objects[int(source_indices[source_index]) if self.unique_objects else int(rng.integers(len(self.objects)))]
@@ -334,7 +363,13 @@ class OnlineCopyPasteDataset(Dataset):
                     alpha *= cv2.GaussianBlur(alpha, (0, 0), self.blend_sigma, borderType=cv2.BORDER_CONSTANT)
                 alpha = alpha[source_y:source_y + bottom - top, source_x:source_x + right - left, None]
                 region = image[top:bottom, left:right]
-                foreground = obj[source_y:source_y + bottom - top, source_x:source_x + right - left]
+                rendered_obj, appearance = obj, None
+                if appearance_rng is not None:
+                    saturation = float(appearance_rng.uniform(*self.object_saturation))
+                    contrast = float(appearance_rng.uniform(*self.object_contrast))
+                    rendered_obj = adjust_object_appearance(obj, mask, saturation, contrast)
+                    appearance = {"saturation": saturation, "contrast": contrast}
+                foreground = rendered_obj[source_y:source_y + bottom - top, source_x:source_x + right - left]
                 region[:] = np.clip(np.rint(foreground * alpha + region * (1 - alpha)), 0, 255).astype(np.uint8)
                 masks = surviving + [visible]
                 class_index = self.class_index[source["category_id"]]
@@ -343,6 +378,8 @@ class OnlineCopyPasteDataset(Dataset):
                                   "class_name": self.class_names[class_index],
                                   "requested_long_side_pixels": long_side, "rotation_degrees": angle,
                                   "position_xy": [x, y], "full_transformed_area": full_area})
+                if appearance is not None:
+                    instances[-1]["appearance"] = appearance
                 accepted = True
                 break
             if not accepted:
