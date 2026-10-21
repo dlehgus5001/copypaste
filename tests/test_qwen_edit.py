@@ -2,6 +2,7 @@
 import copy
 import builtins
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -17,7 +18,7 @@ import torch
 
 from offline_yolox.asset_discovery import discover_objects
 from offline_yolox.copy_paste import OnlineCopyPasteDataset
-from offline_yolox.qwen_edit import adapt_objects, load_pipeline, read_settings
+from offline_yolox.qwen_edit import adapt_objects, load_pipeline, native_attention_imports, read_settings
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -141,24 +142,60 @@ def test_pipeline_load_is_local_safetensors_offline_and_configures_offload(confi
         to=lambda device: events.append(("to", device)),
         enable_model_cpu_offload=lambda **kwargs: events.append(("model", kwargs)),
         enable_sequential_cpu_offload=lambda **kwargs: events.append(("sequential", kwargs)),
+        transformer=SimpleNamespace(set_attention_backend=lambda backend: events.append(("backend", backend))),
         vae=SimpleNamespace(enable_tiling=lambda: events.append(("tiling",)),
                             enable_slicing=lambda: events.append(("slicing",))))
+    encoder = object()
+    class EncoderLoader:
+        @staticmethod
+        def from_pretrained(path, **kwargs):
+            events.append(("encoder", path, kwargs))
+            return encoder
     class Loader:
         @staticmethod
         def from_pretrained(path, **kwargs):
             events.append(("load", path, kwargs))
             return pipeline
     monkeypatch.setitem(sys.modules, "diffusers", SimpleNamespace(QwenImageEditPlusPipeline=Loader))
+    monkeypatch.setitem(sys.modules, "transformers", SimpleNamespace(Qwen2_5_VLForConditionalGeneration=EncoderLoader))
     monkeypatch.setattr(torch.cuda, "is_available", lambda: True)
     monkeypatch.setattr(torch.cuda, "is_bf16_supported", lambda: True)
     for key in ("HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE", "HF_HUB_DISABLE_TELEMETRY", "DIFFUSERS_OFFLINE"):
         monkeypatch.delenv(key, raising=False)
+    monkeypatch.setenv("DIFFUSERS_ATTN_BACKEND", "flash")
     assert load_pipeline(settings, Path(config["model_dir"])) is pipeline
-    assert events[0] == ("load", config["model_dir"], dict(local_files_only=True, use_safetensors=True,
-                                                         torch_dtype=torch.bfloat16))
-    assert events[1] == (("to", "cuda") if offload == "none" else (offload, {"gpu_id": 0}))
+    assert events[0] == ("encoder", str(Path(config["model_dir"]) / "text_encoder"),
+                         dict(local_files_only=True, use_safetensors=True,
+                              torch_dtype=torch.bfloat16, attn_implementation="sdpa"))
+    assert events[1] == ("load", config["model_dir"], dict(local_files_only=True, use_safetensors=True,
+                                                         torch_dtype=torch.bfloat16, text_encoder=encoder))
+    assert events[2] == ("backend", "native")
+    assert events[3] == (("to", "cuda") if offload == "none" else (offload, {"gpu_id": 0}))
     assert ("tiling",) in events and ("slicing",) in events
     assert os.environ["HF_HUB_OFFLINE"] == os.environ["TRANSFORMERS_OFFLINE"] == "1"
+    assert os.environ["DIFFUSERS_ATTN_BACKEND"] == "native"
+
+
+@pytest.mark.parametrize("fail_inside", [False, True])
+def test_native_attention_imports_hide_optional_extensions_and_restore_lookup(tmp_path, monkeypatch, fail_inside):
+    (tmp_path / "flash_attn").mkdir()
+    (tmp_path / "flash_attn/__init__.py").write_text("raise ImportError('incompatible CUDA extension')\n")
+    monkeypatch.syspath_prepend(str(tmp_path))
+    before = importlib.util.find_spec
+    assert before("flash_attn") is not None
+    try:
+        with native_attention_imports():
+            assert importlib.util.find_spec("flash_attn") is None
+            assert importlib.util.find_spec("flash_attn.bert_padding") is None
+            assert importlib.util.find_spec("flash_attn_2_cuda") is None
+            assert importlib.util.find_spec("xformers") is None
+            assert importlib.util.find_spec("torch") is not None
+            if fail_inside:
+                raise RuntimeError("import failure")
+    except RuntimeError as error:
+        assert fail_inside and str(error) == "import failure"
+    assert importlib.util.find_spec is before
+    assert before("flash_attn") is not None
 
 
 def test_reference_class_missing_fails_before_inference(config):

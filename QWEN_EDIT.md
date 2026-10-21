@@ -28,6 +28,8 @@ python -m pip install --no-index --find-links=/반입경로/qwen-wheelhouse "pef
 
 wheel 방식이면 온라인 준비 머신에서 갱신된 requirements로 wheel을 다시 수집해 PEFT와 전이 의존성도 반입한다. 서버 pip constraint가 PEFT 0.15.2를 고정한 경우 해당 환경에서는 두 요구사항이 충돌하므로 Qwen 편집용 환경을 분리한다.
 
+`flash_attn_2_cuda...so: undefined symbol: _ZN3c104cuda9SetDeviceEa`는 설치된 외부 FlashAttention CUDA 확장이 현재 Torch 바이너리와 호환되지 않는 오류다. Qwen 편집 명령은 PyTorch 기본 SDPA를 사용한다. 갱신된 `src/offline_yolox/qwen_edit.py`는 HF 클래스 import 동안 외부 FlashAttention·xformers·SageAttention·aiter 탐지를 제외하고, 텍스트/비전 인코더는 `attn_implementation="sdpa"`, 이미지 transformer는 `native` backend로 명시한다. 설치된 시스템 패키지를 삭제하거나 수정하지 않는다. 탐지 함수는 클래스 import 후 원래대로 복원한다. `DIFFUSERS_ATTN_BACKEND=native` 환경 변수만 설정하면 Diffusers의 초기 optional extension import를 피하지 못할 수 있으므로 수정된 코드를 사용해야 한다. 새 Python 프로세스로 기존 `run.py adapt-objects` 명령을 다시 실행한다. SDPA는 Torch 자체 CUDA 구현을 사용할 수 있으며 CPU offload 설정과는 별개다.
+
 ## 모델 반입
 
 Qwen 가중치는 Git에 포함하지 않는다. 온라인 준비 머신에서 **전체 Diffusers snapshot**을 준비해서 반입한다. 단일 `.safetensors`나 YOLOX `.pth` 파일만으로 실행할 수 없다.

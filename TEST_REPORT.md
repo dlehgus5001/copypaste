@@ -1,5 +1,13 @@
 # 실제 실행 테스트 결과
 
+## 2026-10-21 기존 FlashAttention CUDA 바이너리 충돌 우회
+
+서버에 설치된 flash_attn_2_cuda 확장이 현재 Torch와 ABI가 달라 Qwen 클래스 import가 실패하는 경우에 대응했다. Qwen 편집 명령은 HF 클래스 import 동안 외부 FlashAttention·xformers·SageAttention·aiter package 탐지를 제외하고 import 후 탐지 함수를 복원한다. Diffusers 환경 backend는 native로 지정하고, 텍스트/비전 인코더를 별도로 local_files_only·safetensors·attn_implementation=sdpa로 로드하여 편집 파이프라인에 전달한다. 이미지 transformer도 native backend를 명시한다. 설치된 시스템 패키지와 YOLOX 학습은 변경하지 않는다.
+
+관련 테스트는 **22 passed, 0 failed**, 4.24초다([`reports/pytest-qwen-sdpa.xml`](reports/pytest-qwen-sdpa.xml)). optional extension 탐지 제외와 정상/예외 시 원상 복구, 무관한 Torch 탐지 유지, SDPA encoder·native transformer 선택 및 기존 세 가지 offload 설정을 확인했다.
+
+별도 프로세스에 사용자와 같은 undefined-symbol ImportError를 내는 **모의** flash_attn 패키지·배포 metadata를 만들었다. 실제 Diffusers 0.36·Transformers 4.57.3·PEFT 0.17.1 환경에서 수정 전 실제 Qwen 클래스 import가 같은 메시지로 실패하고, 수정 후에는 해당 확장을 import하지 않고 QwenImageEditPlusPipeline·Qwen2_5_VLForConditionalGeneration import에 성공했다. 탐지 함수 복원과 Torch SDPA CPU forward의 수식 일치도 확인했다([`reports/qwen-sdpa-compatibility.json`](reports/qwen-sdpa-compatibility.json)). 실제 사용자 서버의 .so 파일을 실행한 시험은 아니며, 실제 모델 가중치 로딩·GPU 생성도 여전히 미검증이다. 이번 수정에서는 관련 검사만 수행했으며 아래 전체 219 passed 기록은 기능 추가 시점의 결과다.
+
 ## 2026-10-21 기존 PEFT 구버전과 Qwen import 충돌 수정
 
 초기 Qwen 선택 requirements에는 PEFT 조건이 없어, 서버에 이미 설치된 peft 0.15.2가 남으면 Diffusers 0.36의 `peft>=0.17.0` 검사에서 실패했다. LoRA를 직접 로드하지 않아도 설치된 PEFT에 대한 검사가 실행된다. `requirements-qwen.txt`에 peft 0.17.1을 명시하고, import 실패 메시지에 원래 예외와 같은 Python으로 설치할 호환 프로필을 표시하도록 수정했다. import 단계에서 발생하는 ImportError와 Diffusers lazy import의 RuntimeError 모두 원인을 보존한다.

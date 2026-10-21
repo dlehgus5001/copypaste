@@ -1,10 +1,12 @@
 """Local-only Qwen reference editing of object assets before Copy-Paste training."""
 import argparse
 import hashlib
+import importlib.util
 import json
 import math
 import os
 from pathlib import Path
+from contextlib import contextmanager
 
 import cv2
 import numpy as np
@@ -115,17 +117,44 @@ def prepare_jobs(settings, limit=None):
     return root, model, output, jobs
 
 
+@contextmanager
+def native_attention_imports():
+    """Hide optional CUDA attention wheels during this CLI's HF class imports.
+
+    Diffusers 0.36 eagerly imports installed attention extensions even when the
+    native backend is selected. An extension compiled for another Torch build
+    can therefore prevent importing Qwen. Do not modify shared site-packages.
+    """
+    original = importlib.util.find_spec
+    optional = {"flash_attn", "flash_attn_2_cuda", "flash_attn_3", "flash_attn_3_cuda",
+                "flash_attn_interface", "xformers", "sageattention", "aiter"}
+
+    def find_spec(name, package=None):
+        if name.split(".")[0] in optional:
+            return None
+        return original(name, package)
+
+    importlib.util.find_spec = find_spec
+    try:
+        yield
+    finally:
+        importlib.util.find_spec = original
+
+
 def load_pipeline(settings, model):
     # Set offline flags before importing the optional Hugging Face dependencies.
     for key in ("HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE", "HF_HUB_DISABLE_TELEMETRY", "DIFFUSERS_OFFLINE"):
         os.environ[key] = "1"
+    os.environ["DIFFUSERS_ATTN_BACKEND"] = "native"
     if settings["device"] == "cuda":
         if not torch.cuda.is_available():
             raise RuntimeError("CUDA is unavailable. Qwen editing needs a suitable GPU; --check-inputs does not load the model")
         if settings["dtype"] == "bfloat16" and not torch.cuda.is_bf16_supported():
             raise RuntimeError("This GPU does not support bfloat16; choose a supported dtype")
     try:
-        from diffusers import QwenImageEditPlusPipeline
+        with native_attention_imports():
+            from diffusers import QwenImageEditPlusPipeline
+            from transformers import Qwen2_5_VLForConditionalGeneration
     except (ImportError, RuntimeError) as exc:
         raise RuntimeError(
             f"Qwen pipeline import failed: {exc}\n"
@@ -133,10 +162,17 @@ def load_pipeline(settings, model):
             "with this same Python. Diffusers 0.36 requires peft>=0.17.0 when PEFT is installed "
             "(the tested profile pins peft==0.17.1)."
         ) from exc
+    # Explicitly load the text/vision encoder with SDPA so a saved config or a
+    # preinstalled FlashAttention package cannot select the external extension.
+    text_encoder = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+        str(model / "text_encoder"), local_files_only=True, use_safetensors=True,
+        torch_dtype=getattr(torch, settings["dtype"]), attn_implementation="sdpa",
+    )
     pipeline = QwenImageEditPlusPipeline.from_pretrained(
         str(model), local_files_only=True, use_safetensors=True,
-        torch_dtype=getattr(torch, settings["dtype"]),
+        torch_dtype=getattr(torch, settings["dtype"]), text_encoder=text_encoder,
     )
+    pipeline.transformer.set_attention_backend("native")
     if settings["offload"] == "model":
         pipeline.enable_model_cpu_offload(gpu_id=0)
     elif settings["offload"] == "sequential":

@@ -1,0 +1,17 @@
+{
+  "fixture": "Simulated installed optional FlashAttention package raising the reported ABI ImportError",
+  "before": {
+    "pipeline_imported": false,
+    "error": "flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so: undefined symbol: _ZN3c104cuda9SetDeviceEa"
+  },
+  "after": {
+    "pipeline_imported": true,
+    "text_encoder_imported": true,
+    "external_flash_attn_imported": false,
+    "find_spec_restored": true,
+    "torch_sdpa_cpu_forward": "passed",
+    "real_model_weights_loaded": false,
+    "gpu_generation_tested": false
+  },
+  "installed_packages_removed_or_modified": false
+}
