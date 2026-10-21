@@ -30,6 +30,8 @@ def add_composition_arguments(parser):
                        help="Earth layer color, 0..255 BGR (default: 70 100 130)")
     group.add_argument("--unique-objects", action=argparse.BooleanOptionalAction, default=None,
                        help="Select each object/mask source at most once per composite")
+    group.add_argument("--unique-classes", action=argparse.BooleanOptionalAction, default=None,
+                       help="Select each class at most once per composite, then one source per selected class")
     group.add_argument("--require-object-count", action=argparse.BooleanOptionalAction, default=None,
                        help="Retry or fail instead of accepting fewer objects than requested")
 
@@ -41,7 +43,7 @@ def composition_config(config, args):
              "objects_per_image", "object_size", "object_size_range",
              "object_saturation_range", "object_contrast_range",
              "object_blur_sigma_range", "object_dirt_strength_range", "object_dirt_color_bgr",
-             "unique_objects", "require_object_count")
+             "unique_objects", "unique_classes", "require_object_count")
     if not any(getattr(args, name, None) is not None for name in names):
         return values
     if values.get("mode", "original") not in ("online", "online_patch"):
@@ -78,7 +80,7 @@ def composition_config(config, args):
         settings.pop("object_long_side_pixels", None)
         settings.pop("object_size_weights", None)
         settings["object_long_side_range"] = list(size_range)
-    for name in ("unique_objects", "require_object_count"):
+    for name in ("unique_objects", "unique_classes", "require_object_count"):
         value = getattr(args, name, None)
         if value is not None:
             settings[name] = value

@@ -1,5 +1,17 @@
 # 실제 실행 테스트 결과
 
+## 2026-10-21 합성 이미지·패치의 클래스 중복 방지
+
+`copy_paste.unique_classes`와 공용 CLI `--unique-classes`/`--no-unique-classes`를 추가했다. 활성화하면 객체 자산이 있는 클래스를 중복 없이 균등 선택한 뒤 각 클래스 안에서 소스 이미지·마스크를 랜덤 선택한다. 따라서 서로 다른 파일이어도 같은 COCO category ID의 객체는 한 합성 이미지·패치에 최대 하나만 들어간다. 요청한 최대 객체 수가 실제 자산이 있는 클래스 수를 초과하면 시작 시 오류를 낸다. 기본값은 false이며 기존 파일 단위 `unique_objects`의 의미와 옵션 생략 시 난수 흐름은 유지했다. 실제 검증 데이터의 객체 수는 변경하지 않는다.
+
+Python 3.12 / torch 2.8.0+cu129 / NumPy 1.26.4 / OpenCV 4.11.0.86 / TensorBoard 2.16.2 환경에서 네트워크 차단 상태로 새 테스트 **19 passed, 0 failed, 4 warnings**, 15.65초를 확인했다. [`reports/pytest-unique-classes.xml`](reports/pytest-unique-classes.xml)에 결과가 있다.
+
+동일 환경의 전체 회귀 검사는 **201 passed, 4 GPU skipped, 0 failed, 35 warnings**, 80.22초다. [`reports/pytest-unique-classes-regression.xml`](reports/pytest-unique-classes-regression.xml)에 기록했다. 공식 YOLOX 원본 170개 파일의 hash 검증도 통과했다.
+
+비연속 category ID 1·3·7·29·51 및 같은 클래스의 여러 파일을 사용해 Manifest/폴더 입력, online/online_patch 모드와 unique_objects 동시 설정을 검증했다. 클래스별 하나씩 고르면서 같은 클래스 안에서는 소스가 바뀌는지, 같은 seed에서 픽셀·박스·metadata 재생, 최종 visible mask와 박스·클래스 대응, 0~5개 랜덤 개수와 빈 패치를 확인했다. 기존 파일 중복 방지 모드의 클래스 반복 허용 및 생략/false 동일성, 자산 없는 클래스의 count 한도, boolean 검증과 CLI 우선순위·설정 복사를 확인했다.
+
+0/2 Worker 학습 Loader에서 클래스 중복 방지와 재생을 확인했다. 별도 작업 디렉터리에서 실제 공개 preview·CPU train CLI를 두 합성 모드 모두 실행하여 클래스별 하나씩 저장·학습하고, 유한한 양의 loss와 checkpoint의 유효 설정 저장을 확인했다. 기존 online COCO export에서도 이미지별 클래스 중복 없이 저장했다. GPU 학습과 실제 데이터 탐지 성능 개선은 이 환경에서 검증하지 못했다.
+
 ## 2026-10-20 일반 이미지·폴더 추론과 박스 저장
 
 `python run.py predict`를 추가했다. 이미지 한 장 또는 폴더를 재귀적으로 읽고 저장한 YOLOX checkpoint로 추론하여 원본 크기 이미지에 예측 박스·클래스·점수를 그린다. 전체 이미지 추론과 패치 배치 추론을 지원한다. 패치 예측은 letterbox 비율·원본 crop 위치를 역변환하고 실제 이미지 영역으로 잘라 클래스별 NMS로 합친다. 파일별 원본 좌표 JSON과 실행 summary를 저장하며, 정답 박스·학습 데이터·합성 자산을 초기화하지 않는다. 클래스 이름을 얻을 때만 존재하는 검증 JSON의 categories를 읽을 수 있다. EMA 기본 선택과 일반 가중치 선택을 지원한다.

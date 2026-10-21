@@ -104,6 +104,20 @@ Manifest 방식에서 `copy_paste.asset_root`는 객체와 배경의 공통 로�
 
 `object_count`는 이미지 한 장에 넣을 최소·최대 객체 수다. `[5, 5]`이면 5개를 요청한다. `unique_objects: false`이면 같은 객체 이미지·마스크 세트를 여러 번 선택할 수 있고, `true`이면 한 이미지에서 서로 다른 세트를 선택한다. 서로 다른 클래스만 선택한다는 뜻은 아니다. `true`일 때는 요청한 수 이상의 세트를 폴더 또는 Manifest에 준비해야 한다.
 
+**한 이미지 또는 패치에 같은 클래스를 최대 한 번만 넣으려면** `copy_paste.unique_classes`를 `true`로 지정한다. `1번+3번`은 허용하지만 서로 다른 파일이어도 `1번+1번`은 허용하지 않는다. 먼저 자산이 있는 클래스 중에서 중복 없이 균등하게 선택한 뒤, 각 클래스 안에서 객체·마스크 세트를 랜덤으로 선택한다. 클래스는 폴더 이름 자체가 아니라 폴더 매핑 또는 Manifest의 COCO `category_id`로 구분한다.
+
+```json
+"copy_paste": {
+  "object_count": [0, 5],
+  "unique_classes": true,
+  "require_object_count": true
+}
+```
+
+위 항목을 기존 `copy_paste`에 추가·수정하면 패치마다 0~5개 객체를 만들되 클래스가 겹치지 않는다. `[5, 5]`이면 자산이 있는 5개 클래스에서 각각 하나씩 배치한다. `unique_classes`는 `unique_objects`와 독립적이며, 클래스마다 하나만 고르면 같은 세트의 중복 선택도 자연히 방지된다. 요청하는 최대 개수가 **실제 객체·마스크 자산을 가진 클래스 수**보다 크면 시작 시 오류로 알린다. `num_classes`만 늘리는 것으로 해결되지 않는다.
+
+기본값은 `false`이므로 기존 단일 클래스 예제는 그대로 동작한다. 여러 클래스 데이터에 적용하려면 위 설정 또는 `preview`·`train`·`export`의 `--unique-classes`를 사용한다. `--no-unique-classes`로 명시적으로 해제할 수 있다. 기존 `--unique-objects`의 파일 중복 방지 의미는 유지한다.
+
 기본 설정의 `require_object_count: true`는 요청한 개수를 만족하는 이미지만 반환한다. 각 객체는 `placement_attempts`만큼 배치를 시도하고, 개수를 채우지 못하면 전체 이미지를 다시 합성한다. 전체 시도 한도인 `composition_attempts`는 기본 20이다. 한도를 모두 사용하면 부족한 객체 수로 학습하는 대신 오류로 종료한다. 객체 크기·개수·가림 제한을 조정해서 해결한다. `require_object_count: false`에서는 배치 실패한 객체를 생략할 수 있고, 요청 수와 실제 수를 Metadata에 기록한다.
 
 `rotation_degrees`는 최소·최대 각도다. Mask는 nearest-neighbor 보간으로 확대·회전하며 확장된 캔버스에서 처리한다. `allow_partial_objects`는 영상 경계에 걸친 객체를 허용한다. `min_visible_fraction`, `min_visible_pixels`, `min_box_side_pixels` 미만이 되는 배치는 재시도한다. 이미 놓은 객체가 심하게 가려질 배치도 거부한다.

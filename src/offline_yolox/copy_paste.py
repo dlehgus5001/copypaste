@@ -114,6 +114,7 @@ class OnlineCopyPasteDataset(Dataset):
         self.epoch_length = self._positive_int(config.get("epoch_length", 1000), "epoch_length")
         self.object_count = _pair(config.get("object_count", [1, 5]), "object_count", integer=True, minimum=0)
         self.unique_objects = self._boolean(config.get("unique_objects", False), "unique_objects")
+        self.unique_classes = self._boolean(config.get("unique_classes", False), "unique_classes")
         self.require_object_count = self._boolean(config.get("require_object_count", False), "require_object_count")
         self.composition_attempts = self._positive_int(config.get("composition_attempts", 20), "composition_attempts")
         self.max_labels = self._positive_int(config.get("max_labels", 120), "max_labels")
@@ -173,6 +174,17 @@ class OnlineCopyPasteDataset(Dataset):
                                        or self.object_dirt_strength != (0, 0))
         with startup_stage("Indexing object/mask files"):
             self.objects = self._read_objects(config.get("objects_manifest", "objects/manifest.json"))
+        by_category = {}
+        for index, source in enumerate(self.objects):
+            by_category.setdefault(source["category_id"], []).append(index)
+        self._class_sources = list(by_category.values())
+        if self.unique_classes and self.object_count[1] > len(self._class_sources):
+            raise ValueError(
+                f"unique_classes: object_count maximum {self.object_count[1]} exceeds the "
+                f"{len(self._class_sources)} classes with object/mask assets "
+                f"(category IDs: {sorted(by_category)}). Reduce object_count or add assets "
+                "for the missing classes. Each class can appear at most once per composite."
+            )
         if self.unique_objects and self.object_count[1] > len(self.objects):
             raise ValueError("object_count maximum must not exceed available distinct object image/mask sources when unique_objects is true")
         with startup_stage("Indexing background files"):
@@ -336,9 +348,16 @@ class OnlineCopyPasteDataset(Dataset):
         appearance_rng = (np.random.default_rng(np.random.SeedSequence([
             self._stream_seed, self._calls, 0xC0104,
         ])) if self.object_appearance_enabled else None)
-        source_indices = rng.choice(len(self.objects), size=count, replace=False) if self.unique_objects else None
+        if self.unique_classes:
+            # Choose classes uniformly first, then one source within each class.
+            # Large folders must not make a class more likely to be included.
+            selected_classes = rng.choice(len(self._class_sources), size=count, replace=False)
+            source_indices = [int(rng.choice(self._class_sources[int(index)])) for index in selected_classes]
+        else:
+            source_indices = rng.choice(len(self.objects), size=count, replace=False) if self.unique_objects else None
         for source_index in range(count):
-            source = self.objects[int(source_indices[source_index]) if self.unique_objects else int(rng.integers(len(self.objects)))]
+            source = self.objects[int(source_indices[source_index]) if source_indices is not None
+                                  else int(rng.integers(len(self.objects)))]
             obj = self._read_image(source["image_path"])
             mask = self._read_mask(source["mask_path"], obj.shape[:2])
             if self.object_size_range is None:

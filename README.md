@@ -58,6 +58,17 @@ python run.py train --mode online --config configs/online.json --device cuda \
 
 기본적으로 같은 객체·마스크 세트를 여러 번 선택할 수 있습니다. 이미지 안에서 서로 다른 세트만 선택하려면 `--unique-objects`를 추가하고 객체 세트를 5개 이상 준비하세요. 객체를 5개 배치할 수 없으면 재시도 후 오류로 알립니다. `preview`와 `export`는 합성 결과를 파일로 확인하거나 반출할 때만 직접 실행하는 선택 도구이며 학습에서 자동 호출하지 않습니다.
 
+**한 패치에서 같은 클래스가 두 번 나오지 않게 하려면** 사용하는 JSON의 `copy_paste`에 `"unique_classes": true`를 추가하세요. `1번+3번`은 가능하지만 `1번+1번`은 불가능합니다. 먼저 클래스를 중복 없이 선택한 다음 각 클래스 안에서 이미지·마스크를 랜덤 선택합니다. `object_count: [0, 5]`는 서로 다른 클래스로 0~5개를, `[5, 5]`는 5개를 요청합니다. 요청한 최대 수 이상의 클래스에 실제 객체·마스크 자산이 있어야 합니다. 기존 `unique_objects`는 파일 중복만 막는 옵션이며 의미를 바꾸지 않았습니다. `train`·`preview`·`export`에 `--unique-classes`를 추가해도 같은 설정을 적용할 수 있습니다.
+
+```bash
+python run.py preview --config configs/online_patch.json \
+  --output outputs/preview_unique_classes --count 20 --unique-classes
+python run.py train --mode online_patch --config configs/online_patch.json \
+  --device cuda --unique-classes
+```
+
+위 클래스 중복 방지 명령은 실제 다중 클래스 데이터로 수정한 설정에서 사용하세요. 기본 단일 클래스 샘플 설정에서 객체 5개를 요청하면 클래스 부족 오류가 발생합니다.
+
 각 명령의 옵션은 `python run.py --help`, `python run.py train --help` 등으로 확인합니다. `train --mode original`은 `configs/original.json`, `train --mode online`은 `configs/online.json`을 기본으로 사용합니다. `--config`로 다른 설정을 지정할 수 있으며, 명시한 `--mode`와 설정의 모드가 다르면 오류로 종료합니다. C++ 빌드에는 시스템의 `gcc`·`g++`가 필요하고, 학습·평가 등의 네트워크 차단 실행에는 Linux의 `libseccomp`가 필요합니다.
 
 GPU가 없는 머신은 두 학습·평가 명령의 `cuda`를 `cpu`로 바꾸어 진단합니다. 별도 venv와 전체 wheelhouse는 아래처럼 새 환경을 완전히 재현할 때 사용하는 경로입니다.
