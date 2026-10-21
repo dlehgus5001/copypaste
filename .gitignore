@@ -5,6 +5,8 @@ data/sample/
 data/assets/
 artifacts/
 outputs/
+models/
+qwen-wheelhouse/
 __pycache__/
 *.py[cod]
 *.egg-info/

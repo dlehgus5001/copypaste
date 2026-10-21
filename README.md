@@ -105,6 +105,12 @@ python run.py train --mode online --config configs/online_folders.json --device 
 
 `configs/online_folders.json`에서 `max_epoch`, `batch_size`, `copy_paste.epoch_length`를 바꾸면 학습 횟수와 배치 크기, EPOCH당 이미지 분량을 조절합니다. 이 파일은 작은 샘플 모델·입력 크기와 `data/sample`의 검증 데이터를 사용하므로, 실제 학습에서는 `data_dir`·`num_classes`·모델 설정도 맞추세요. 검증 클래스가 하나라면 위 5개 폴더의 객체는 모두 같은 클래스입니다. 5개 객체는 전체 파일 목록에서 랜덤으로 선택하며, 폴더마다 하나씩 선택하는 규칙은 아닙니다. 폴더별 클래스 지정과 경로 변경은 [configs/ONLINE_DATA.md](configs/ONLINE_DATA.md)를 참고하세요.
 
+## Qwen으로 객체 외형을 항공영상에 맞추기
+
+`python run.py adapt-objects --config configs/qwen_edit.json --limit 1`로 객체 사진·마스크와 같은 클래스의 실제 항공 crop을 Qwen-Image-Edit-2511에 입력할 수 있습니다. **항공 crop에는 마스크가 필요 없습니다.** 로컬 모델 전체 폴더와 선택 의존성 `requirements-qwen.txt`가 필요하며 네트워크 다운로드는 실행하지 않습니다.
+
+변환 객체·원본과 같은 마스크·전체 생성 결과·비교 이미지를 `data/assets/qwen_adapted_v1/`에 저장합니다. 모델은 YOLOX 학습 전에 한 번씩 실행하며, 이후에는 변환된 객체 폴더를 기존 합성 학습에서 읽습니다. 설치·폴더 구조·학습 연결은 [QWEN_EDIT.md](QWEN_EDIT.md)를 참고하세요. 픽셀 좌표와 마스크 영역을 유지하는 처리이며, 차량 형태·클래스가 생성 과정에서 유지됐다는 보장은 없습니다. 비교 이미지로 먼저 확인하세요. 실제 Qwen GPU 생성 품질은 이 개발 환경에서 검증하지 못했습니다.
+
 ## 큰 이미지를 패치로 학습하기
 
 기존 `original`, `online`은 그대로 사용합니다. 새 모드는 다음 두 가지입니다.

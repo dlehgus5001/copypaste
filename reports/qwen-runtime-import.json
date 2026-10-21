@@ -1,0 +1,33 @@
+{
+  "python": "3.12.14",
+  "packages": {
+    "torch": "2.8.0+cu129",
+    "torchvision": "0.23.0+cu129",
+    "numpy": "1.26.4",
+    "diffusers": "0.36.0",
+    "transformers": "4.57.3",
+    "accelerate": "1.12.0",
+    "safetensors": "0.7.0",
+    "huggingface-hub": "0.36.0",
+    "Pillow": "12.3.0"
+  },
+  "cuda_available": false,
+  "qwen_pipeline_imported": true,
+  "requested_pipeline_arguments_verified": [
+    "image",
+    "prompt",
+    "height",
+    "width",
+    "negative_prompt",
+    "true_cfg_scale",
+    "guidance_scale",
+    "generator",
+    "num_inference_steps",
+    "num_images_per_prompt",
+    "output_type"
+  ],
+  "network_blocked_by_seccomp": true,
+  "real_model_weights_loaded": false,
+  "real_qwen_generation_tested": false,
+  "quality_or_detection_improvement_verified": false
+}

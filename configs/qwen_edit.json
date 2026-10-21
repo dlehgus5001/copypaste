@@ -1,0 +1,36 @@
+{
+  "model_dir": "models/Qwen-Image-Edit-2511",
+  "asset_root": "data/assets",
+  "objects_dir": "object",
+  "masks_dir": "mask",
+  "references_dir": "aerial_crop",
+  "mask_suffix": "",
+  "class_ids": [1, 2, 3, 4, 5],
+  "class_names": [
+    "3.5ton-Sky-Lift",
+    "5ton-Cargo-Crane",
+    "5ton-Ladder-Truck",
+    "11ton-Cargo-Truck",
+    "25ton-Crane"
+  ],
+  "folder_categories": {
+    "object_1": 1,
+    "object_2": 2,
+    "object_3": 3,
+    "object_4": 4,
+    "object_5": 5
+  },
+  "output": "data/assets/qwen_adapted_v1",
+  "work_size": [512, 512],
+  "crop_padding": 0.15,
+  "variants_per_object": 1,
+  "num_inference_steps": 40,
+  "true_cfg_scale": 4.0,
+  "guidance_scale": 1.0,
+  "negative_prompt": "different vehicle, changed vehicle class, moved object, changed silhouette, additional objects, missing parts, sharpened details, text, watermark",
+  "prompt": "Edit image 1 only. Image 1 contains a {class_name}. Use image 2 only as a reference for the aerial camera appearance: muted colors, contrast, surface texture and optical softness. Preserve the exact vehicle category, parts, viewpoint, silhouette, scale, position and orientation in image 1. Do not copy the vehicle or background from image 2. Keep the neutral background of image 1 unchanged. Do not add objects or enhance sharpness. Return only the edited image 1, with the same framing.",
+  "seed": 42,
+  "device": "cuda",
+  "dtype": "bfloat16",
+  "offload": "sequential"
+}

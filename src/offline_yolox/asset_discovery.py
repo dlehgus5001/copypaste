@@ -170,3 +170,16 @@ def discover_backgrounds(asset_root, backgrounds_dir):
     if not images:
         raise ValueError(f"No supported background images found in backgrounds_dir: {directory}")
     return [image.relative_to(root).as_posix() for image in images]
+
+
+def discover_references(asset_root, references_dir, class_ids, class_names, *, folder_categories=None):
+    """Discover class-labelled reference crops; no reference masks are needed."""
+    root = _root_path(asset_root)
+    directory = _directory(root, references_dir, "references_dir")
+    ids, names, categories = _taxonomy(class_ids, class_names, folder_categories)
+    images = _images(root, directory)
+    if not images:
+        raise ValueError(f"No supported reference images found: {directory}")
+    return [{"image": image.relative_to(root).as_posix(),
+             "category_id": _category(image.relative_to(directory), ids, names, categories)}
+            for image in images]

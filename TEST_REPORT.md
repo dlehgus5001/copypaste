@@ -1,5 +1,17 @@
 # 실제 실행 테스트 결과
 
+## 2026-10-21 로컬 Qwen 객체 참조 편집
+
+`python run.py adapt-objects`와 `configs/qwen_edit.json`, 선택 의존성 `requirements-qwen.txt`, 사용법 `QWEN_EDIT.md`를 추가했다. 객체·마스크와 같은 COCO 클래스의 실제 항공 crop을 폴더에서 연결해 QwenImageEditPlusPipeline의 두 이미지 참조 편집으로 전달한다. 로컬 모델 전체 snapshot만 허용하고 offline 환경 변수·local_files_only·safetensors·커널 네트워크 차단을 사용한다. 입력 crop을 비율 유지 letterbox한 뒤 출력에서 역변환하여 원본 마스크 내부만 교체한다. 원래 크기의 객체·이진 마스크, 전체 raw 출력·비교 이미지·입력 경로/seed/참조 metadata와 기존 합성 설정에 병합할 경로 JSON을 저장한다. 원본과 기존 출력은 덮어쓰지 않는다.
+
+Torch 2.8.0+cu129 / torchvision 0.23.0+cu129 / NumPy 1.26.4 환경을 재사용한 별도 환경에 diffusers 0.36.0·transformers 4.57.3·accelerate 1.12.0·safetensors 0.7.0·huggingface-hub 0.36.0을 실제 설치했다. pip check는 No broken requirements이며, 네트워크 차단 상태에서 실제 QwenImageEditPlusPipeline import와 요청한 호출 인자를 확인했다. [`reports/qwen-runtime-import.json`](reports/qwen-runtime-import.json)에 버전·확인 범위를 기록했다. 모델 가중치는 로드하지 않았다.
+
+기존 기본 환경에서 새 오케스트레이션 테스트 **18 passed, 0 failed**, 5.10초다([`reports/pytest-qwen-edit.xml`](reports/pytest-qwen-edit.xml)). 테스트 대역으로 같은 클래스 참조 선택·seed 재생, 비정사각 crop/letterbox 좌표 복원, 마스크와 마스크 밖 픽셀 보존, 원본 파일 불변, 새 객체·마스크를 기존 Copy-Paste에서 다시 읽어 클래스 중복 없이 합성하는 동작을 확인했다. 모델 offload 세 모드·local_files_only/safetensors 인자, 모델 미로딩 공개 check-inputs CLI, 클래스별 참조 누락·잘못된 마스크·출력 경로 겹침·기존 파일 보호·출력 크기 오류도 확인했다.
+
+Qwen 선택 의존성을 설치한 환경의 전체 회귀 검사는 **219 passed, 4 GPU skipped, 0 failed, 35 warnings**, 80.21초다([`reports/pytest-qwen-edit-regression.xml`](reports/pytest-qwen-edit-regression.xml)). 공식 YOLOX 원본 170개 파일 hash 검증을 통과했고, 실제 소스 압축에서 새 코드·config·설치 파일·문서 포함과 모델 가중치 폴더·venv 제외를 확인했다.
+
+Qwen 선택 의존성은 기존 기본 requirements와 wheel lock에 추가하지 않았다. 소스 패키지에는 새 코드·config·설치 파일·사용법을 포함하고 모델·자산·추가 wheel은 포함하지 않는다. **테스트 대역의 출력은 실제 Qwen 생성물이 아니다.** GPU와 실제 Qwen 가중치가 없으므로 실제 모델 로딩·GPU 생성·처리 시간·메모리·차량 형태 보존·항공영상 AP 개선은 미검증이다. 마스크 픽셀 좌표 보존은 생성된 차량 의미·형태 보존을 보장하지 않으므로 metadata에 검수 필요와 의미 보존 미검증을 명시한다.
+
 ## 2026-10-21 합성 이미지·패치의 클래스 중복 방지
 
 `copy_paste.unique_classes`와 공용 CLI `--unique-classes`/`--no-unique-classes`를 추가했다. 활성화하면 객체 자산이 있는 클래스를 중복 없이 균등 선택한 뒤 각 클래스 안에서 소스 이미지·마스크를 랜덤 선택한다. 따라서 서로 다른 파일이어도 같은 COCO category ID의 객체는 한 합성 이미지·패치에 최대 하나만 들어간다. 요청한 최대 객체 수가 실제 자산이 있는 클래스 수를 초과하면 시작 시 오류를 낸다. 기본값은 false이며 기존 파일 단위 `unique_objects`의 의미와 옵션 생략 시 난수 흐름은 유지했다. 실제 검증 데이터의 객체 수는 변경하지 않는다.

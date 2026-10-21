@@ -1,0 +1,10 @@
+# Optional local Qwen editing only. Install into a separate environment if needed.
+# Preserve the YOLOX server's Torch/torchvision versions and CUDA build.
+torch==2.8.0
+torchvision==0.23.0
+diffusers==0.36.0
+transformers==4.57.3
+accelerate==1.12.0
+safetensors==0.7.0
+huggingface-hub==0.36.0
+Pillow>=11,<13
