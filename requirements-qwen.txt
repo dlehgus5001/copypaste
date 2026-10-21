@@ -5,6 +5,8 @@ torchvision==0.23.0
 diffusers==0.36.0
 transformers==4.57.3
 accelerate==1.12.0
+# Diffusers 0.36 rejects an existing PEFT <0.17 even when no LoRA is loaded.
+peft==0.17.1
 safetensors==0.7.0
 huggingface-hub==0.36.0
 Pillow>=11,<13

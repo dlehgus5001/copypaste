@@ -1,0 +1,19 @@
+{
+  "before": {
+    "peft": "0.15.2",
+    "diffusers": "0.36.0",
+    "import_succeeded": false,
+    "error": "peft>=0.17.0 is required for a normal functioning of this module, but found peft==0.15.2."
+  },
+  "real_model_weights_loaded": false,
+  "gpu_generation_tested": false,
+  "after": {
+    "peft": "0.17.1",
+    "diffusers": "0.36.0",
+    "transformers": "4.57.3",
+    "accelerate": "1.12.0",
+    "torch": "2.8.0+cu129",
+    "torchvision": "0.23.0+cu129",
+    "import_succeeded": true
+  }
+}

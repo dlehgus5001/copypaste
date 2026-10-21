@@ -1,5 +1,13 @@
 # 실제 실행 테스트 결과
 
+## 2026-10-21 기존 PEFT 구버전과 Qwen import 충돌 수정
+
+초기 Qwen 선택 requirements에는 PEFT 조건이 없어, 서버에 이미 설치된 peft 0.15.2가 남으면 Diffusers 0.36의 `peft>=0.17.0` 검사에서 실패했다. LoRA를 직접 로드하지 않아도 설치된 PEFT에 대한 검사가 실행된다. `requirements-qwen.txt`에 peft 0.17.1을 명시하고, import 실패 메시지에 원래 예외와 같은 Python으로 설치할 호환 프로필을 표시하도록 수정했다. import 단계에서 발생하는 ImportError와 Diffusers lazy import의 RuntimeError 모두 원인을 보존한다.
+
+격리된 Qwen 환경에 peft 0.15.2를 실제 설치해 사용자와 동일한 오류를 네트워크 차단 아래 재현했다. 갱신된 requirements를 적용하면 peft 0.17.1로 교체되고 Torch 2.8.0+cu129·torchvision 0.23.0+cu129는 유지됐다. Diffusers 0.36.0·transformers 4.57.3·accelerate 1.12.0과 함께 실제 QwenImageEditPlusPipeline import에 성공했으며 pip check도 No broken requirements다. [`reports/qwen-peft-compatibility.json`](reports/qwen-peft-compatibility.json)에 변경 전후를 기록했다.
+
+관련 오케스트레이션·오류 메시지 회귀 테스트는 **20 passed, 0 failed**, 5.48초다([`reports/pytest-qwen-peft.xml`](reports/pytest-qwen-peft.xml)). 실제 모델 가중치 로딩·GPU 생성 품질은 이 검사에 포함되지 않는다. 전체 회귀 테스트 219 passed 기록은 아래 기능 추가 시점의 결과이며 이번 수정 후 전체 재실행을 주장하지 않는다.
+
 ## 2026-10-21 로컬 Qwen 객체 참조 편집
 
 `python run.py adapt-objects`와 `configs/qwen_edit.json`, 선택 의존성 `requirements-qwen.txt`, 사용법 `QWEN_EDIT.md`를 추가했다. 객체·마스크와 같은 COCO 클래스의 실제 항공 crop을 폴더에서 연결해 QwenImageEditPlusPipeline의 두 이미지 참조 편집으로 전달한다. 로컬 모델 전체 snapshot만 허용하고 offline 환경 변수·local_files_only·safetensors·커널 네트워크 차단을 사용한다. 입력 crop을 비율 유지 letterbox한 뒤 출력에서 역변환하여 원본 마스크 내부만 교체한다. 원래 크기의 객체·이진 마스크, 전체 raw 출력·비교 이미지·입력 경로/seed/참조 metadata와 기존 합성 설정에 병합할 경로 JSON을 저장한다. 원본과 기존 출력은 덮어쓰지 않는다.

@@ -126,8 +126,13 @@ def load_pipeline(settings, model):
             raise RuntimeError("This GPU does not support bfloat16; choose a supported dtype")
     try:
         from diffusers import QwenImageEditPlusPipeline
-    except ImportError as exc:
-        raise RuntimeError("Install the optional local dependencies from requirements-qwen.txt") from exc
+    except (ImportError, RuntimeError) as exc:
+        raise RuntimeError(
+            f"Qwen pipeline import failed: {exc}\n"
+            "Install compatible optional dependencies from requirements-qwen.txt "
+            "with this same Python. Diffusers 0.36 requires peft>=0.17.0 when PEFT is installed "
+            "(the tested profile pins peft==0.17.1)."
+        ) from exc
     pipeline = QwenImageEditPlusPipeline.from_pretrained(
         str(model), local_files_only=True, use_safetensors=True,
         torch_dtype=getattr(torch, settings["dtype"]),

@@ -1,5 +1,6 @@
 """Offline editing orchestration tests; fake pixels do not validate Qwen quality."""
 import copy
+import builtins
 import hashlib
 import json
 import os
@@ -167,6 +168,27 @@ def test_reference_class_missing_fails_before_inference(config):
     with pytest.raises(ValueError, match="No aerial reference crop for category_id=3"):
         adapt_objects(config, pipeline=pipeline)
     assert not pipeline.calls and not Path(config["output"]).exists()
+
+
+@pytest.mark.parametrize("exception_type", [ImportError, RuntimeError])
+def test_pipeline_import_failure_preserves_dependency_conflict_and_fix(config, monkeypatch, exception_type):
+    original_import = builtins.__import__
+    conflict = "peft>=0.17.0 is required, but found peft==0.15.2"
+
+    def failing_import(name, *args, **kwargs):
+        if name == "diffusers":
+            raise exception_type(conflict)
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", failing_import)
+    for key in ("HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE", "HF_HUB_DISABLE_TELEMETRY", "DIFFUSERS_OFFLINE"):
+        monkeypatch.delenv(key, raising=False)
+    with pytest.raises(RuntimeError) as error:
+        load_pipeline(read_settings(config), Path(config["model_dir"]))
+    assert conflict in str(error.value)
+    assert "requirements-qwen.txt" in str(error.value)
+    assert "peft==0.17.1" in str(error.value)
+    assert isinstance(error.value.__cause__, exception_type)
 
 
 @pytest.mark.parametrize("kind", ["nonbinary", "empty", "wrong_size"])

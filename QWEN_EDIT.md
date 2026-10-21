@@ -16,7 +16,17 @@ pip install -r requirements-qwen.txt
 pip install --no-index --find-links=/반입경로/qwen-wheelhouse -r requirements-qwen.txt
 ```
 
-`diffusers==0.36.0`, `transformers==4.57.3`, `accelerate==1.12.0`, `safetensors==0.7.0`, `huggingface-hub==0.36.0`을 사용한다. 이 조합의 실제 설치·의존성 검사와 QwenImageEditPlusPipeline import·호출 인자 확인은 수행했다. 실제 Qwen 가중치 로딩·GPU 생성은 이 개발 환경에서 수행하지 못했다. 기존 환경에 별도 패키지 제약이 있으면 분리된 Python 환경을 사용할 수 있으며, 생성된 PNG는 기존 YOLOX 환경에서 읽을 수 있다.
+`diffusers==0.36.0`, `transformers==4.57.3`, `accelerate==1.12.0`, `peft==0.17.1`, `safetensors==0.7.0`, `huggingface-hub==0.36.0`을 사용한다. 이 조합의 실제 설치·의존성 검사와 QwenImageEditPlusPipeline import·호출 인자 확인은 수행했다. 실제 Qwen 가중치 로딩·GPU 생성은 이 개발 환경에서 수행하지 못했다. 기존 환경에 별도 패키지 제약이 있으면 분리된 Python 환경을 사용할 수 있으며, 생성된 PNG는 기존 YOLOX 환경에서 읽을 수 있다.
+
+이미 requirements를 설치했는데 `peft>=0.17.0 ... found peft==0.15.2`가 발생하면, 초기 Qwen requirements에 PEFT 조건이 빠져 있어 기존 구버전이 남은 경우다. LoRA를 직접 사용하지 않아도 Diffusers가 설치된 PEFT 버전을 검사한다. 갱신된 requirements를 같은 Python으로 다시 설치하거나 아래 한 패키지를 설치한다.
+
+```bash
+python -m pip install "peft==0.17.1"
+# 반입 wheel만 사용할 때
+python -m pip install --no-index --find-links=/반입경로/qwen-wheelhouse "peft==0.17.1"
+```
+
+wheel 방식이면 온라인 준비 머신에서 갱신된 requirements로 wheel을 다시 수집해 PEFT와 전이 의존성도 반입한다. 서버 pip constraint가 PEFT 0.15.2를 고정한 경우 해당 환경에서는 두 요구사항이 충돌하므로 Qwen 편집용 환경을 분리한다.
 
 ## 모델 반입
 
