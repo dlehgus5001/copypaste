@@ -18,7 +18,7 @@ import torch
 
 from offline_yolox.asset_discovery import discover_objects
 from offline_yolox.copy_paste import OnlineCopyPasteDataset
-from offline_yolox.qwen_edit import adapt_objects, load_pipeline, native_attention_imports, read_settings
+from offline_yolox.qwen_edit import adapt_objects, load_pipeline, native_attention_imports, read_settings, uses_bitsandbytes_weights
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -180,6 +180,8 @@ def test_pipeline_load_is_local_safetensors_offline_and_configures_offload(confi
 def test_native_attention_imports_hide_optional_extensions_and_restore_lookup(tmp_path, monkeypatch, fail_inside):
     (tmp_path / "flash_attn").mkdir()
     (tmp_path / "flash_attn/__init__.py").write_text("raise ImportError('incompatible CUDA extension')\n")
+    (tmp_path / "bitsandbytes").mkdir()
+    (tmp_path / "bitsandbytes/__init__.py").write_text("raise RuntimeError('Configured CUDA binary not found')\n")
     monkeypatch.syspath_prepend(str(tmp_path))
     before = importlib.util.find_spec
     assert before("flash_attn") is not None
@@ -189,6 +191,7 @@ def test_native_attention_imports_hide_optional_extensions_and_restore_lookup(tm
             assert importlib.util.find_spec("flash_attn.bert_padding") is None
             assert importlib.util.find_spec("flash_attn_2_cuda") is None
             assert importlib.util.find_spec("xformers") is None
+            assert importlib.util.find_spec("bitsandbytes") is None
             assert importlib.util.find_spec("torch") is not None
             if fail_inside:
                 raise RuntimeError("import failure")
@@ -196,6 +199,22 @@ def test_native_attention_imports_hide_optional_extensions_and_restore_lookup(tm
         assert fail_inside and str(error) == "import failure"
     assert importlib.util.find_spec is before
     assert before("flash_attn") is not None
+    assert before("bitsandbytes") is not None
+    with native_attention_imports(hide_bitsandbytes=False):
+        assert importlib.util.find_spec("bitsandbytes") is not None
+        assert importlib.util.find_spec("flash_attn") is None
+
+
+@pytest.mark.parametrize("component", ["text_encoder", "transformer"])
+@pytest.mark.parametrize("quantization", [{"quant_method": "bitsandbytes"}, {"_load_in_4bit": True}])
+def test_quantized_local_weights_keep_the_required_bitsandbytes_backend(config, component, quantization):
+    model = Path(config["model_dir"])
+    assert not uses_bitsandbytes_weights(model)
+    path = model / component / "config.json"
+    path.write_text(json.dumps({"quantization_config": quantization}))
+    assert uses_bitsandbytes_weights(model)
+    path.write_text(json.dumps({"quantization_config": {"quant_method": "fp8"}}))
+    assert not uses_bitsandbytes_weights(model)
 
 
 def test_reference_class_missing_fails_before_inference(config):

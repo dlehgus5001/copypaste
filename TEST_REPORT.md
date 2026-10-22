@@ -1,5 +1,11 @@
 # 실제 실행 테스트 결과
 
+## 2026-10-22 미사용 bitsandbytes CUDA 라이브러리 import 충돌 우회
+
+기본 BF16 Qwen 편집에는 bitsandbytes 양자화가 필요하지 않지만, 이미 설치된 bitsandbytes를 PEFT가 탐지·import하면서 누락된 CUDA native library 오류를 낼 수 있었다. 일반 가중치의 HF 클래스 import에서 미사용 bitsandbytes도 탐지 제외하도록 수정했다. text_encoder/transformer config에 bitsandbytes quantization_config 또는 4/8bit 로딩 플래그가 있으면 해당 backend는 숨기지 않는다. 실제 양자화에 필요한 라이브러리 오류를 조용히 무시하거나 가중치를 다른 정밀도로 바꾸지 않는다. 탐지 함수는 import 후 복원하며 시스템 패키지는 수정하지 않는다.
+
+관련 테스트는 **26 passed, 0 failed**, 5.37초다([`reports/pytest-qwen-bnb.xml`](reports/pytest-qwen-bnb.xml)). 기본 프로필에서 bitsandbytes 탐지 제외·복구, 양자화 프로필에서 유지, 두 모델 component의 quantization_config 탐지를 확인했다. 별도 프로세스에 사용자와 같은 missing-CUDA-library RuntimeError를 내는 **모의** bitsandbytes 패키지와 배포 metadata를 두고, 실제 Qwen 클래스 import가 수정 전 실패·수정 후 성공하는 것을 확인했다([`reports/qwen-bnb-compatibility.json`](reports/qwen-bnb-compatibility.json)). 사용자 서버의 실제 CUDA 바이너리·양자화 모델 실행·GPU 생성·속도 개선을 검증한 결과는 아니다. 전체 회귀 테스트를 다시 실행한 것으로 주장하지 않는다.
+
 ## 2026-10-21 기존 FlashAttention CUDA 바이너리 충돌 우회
 
 서버에 설치된 flash_attn_2_cuda 확장이 현재 Torch와 ABI가 달라 Qwen 클래스 import가 실패하는 경우에 대응했다. Qwen 편집 명령은 HF 클래스 import 동안 외부 FlashAttention·xformers·SageAttention·aiter package 탐지를 제외하고 import 후 탐지 함수를 복원한다. Diffusers 환경 backend는 native로 지정하고, 텍스트/비전 인코더를 별도로 local_files_only·safetensors·attn_implementation=sdpa로 로드하여 편집 파이프라인에 전달한다. 이미지 transformer도 native backend를 명시한다. 설치된 시스템 패키지와 YOLOX 학습은 변경하지 않는다.

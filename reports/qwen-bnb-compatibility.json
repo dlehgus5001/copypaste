@@ -1,0 +1,16 @@
+{
+  "fixture": "Simulated installed bitsandbytes package raising the reported missing CUDA library error",
+  "before": {
+    "pipeline_imported": false,
+    "error": "Configured CUDA binary not found at /usr/local/lib/python3.12/dist-packages/bitsandbytes/libbitsandbytes_cuda128.so"
+  },
+  "after": {
+    "pipeline_imported": true,
+    "text_encoder_imported": true,
+    "bitsandbytes_imported": false,
+    "find_spec_restored": true,
+    "real_model_weights_loaded": false,
+    "gpu_generation_tested": false
+  },
+  "installed_packages_removed_or_modified": false
+}

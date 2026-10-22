@@ -118,8 +118,8 @@ def prepare_jobs(settings, limit=None):
 
 
 @contextmanager
-def native_attention_imports():
-    """Hide optional CUDA attention wheels during this CLI's HF class imports.
+def native_attention_imports(*, hide_bitsandbytes=True):
+    """Hide unused optional CUDA wheels during this CLI's HF class imports.
 
     Diffusers 0.36 eagerly imports installed attention extensions even when the
     native backend is selected. An extension compiled for another Torch build
@@ -128,6 +128,9 @@ def native_attention_imports():
     original = importlib.util.find_spec
     optional = {"flash_attn", "flash_attn_2_cuda", "flash_attn_3", "flash_attn_3_cuda",
                 "flash_attn_interface", "xformers", "sageattention", "aiter"}
+    if hide_bitsandbytes:
+        # PEFT can import an installed BNB package even for ordinary BF16 weights.
+        optional.add("bitsandbytes")
 
     def find_spec(name, package=None):
         if name.split(".")[0] in optional:
@@ -141,6 +144,22 @@ def native_attention_imports():
         importlib.util.find_spec = original
 
 
+def uses_bitsandbytes_weights(model):
+    """Do not hide BNB when a local checkpoint explicitly requires its backend."""
+    for component in ("text_encoder", "transformer"):
+        config_path = model / component / "config.json"
+        if not config_path.is_file():
+            continue
+        values = json.loads(config_path.read_text(encoding="utf-8"))
+        quantization = values.get("quantization_config") or {}
+        if isinstance(quantization, dict) and (
+            "bitsandbytes" in str(quantization.get("quant_method", "")).lower()
+            or any(quantization.get(key) for key in ("load_in_4bit", "load_in_8bit", "_load_in_4bit", "_load_in_8bit"))
+        ):
+            return True
+    return False
+
+
 def load_pipeline(settings, model):
     # Set offline flags before importing the optional Hugging Face dependencies.
     for key in ("HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE", "HF_HUB_DISABLE_TELEMETRY", "DIFFUSERS_OFFLINE"):
@@ -152,7 +171,7 @@ def load_pipeline(settings, model):
         if settings["dtype"] == "bfloat16" and not torch.cuda.is_bf16_supported():
             raise RuntimeError("This GPU does not support bfloat16; choose a supported dtype")
     try:
-        with native_attention_imports():
+        with native_attention_imports(hide_bitsandbytes=not uses_bitsandbytes_weights(model)):
             from diffusers import QwenImageEditPlusPipeline
             from transformers import Qwen2_5_VLForConditionalGeneration
     except (ImportError, RuntimeError) as exc:

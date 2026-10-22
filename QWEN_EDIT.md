@@ -32,6 +32,8 @@ wheel 방식이면 온라인 준비 머신에서 갱신된 requirements로 wheel
 
 ## 모델 반입
 
+`bitsandbytes/libbitsandbytes_cuda128.so`가 없다는 오류는 해당 선택 패키지가 요청한 CUDA 12.8용 네이티브 라이브러리를 찾지 못한 것이다. 실제 Torch CUDA build·`BNB_CUDA_VERSION` 환경 변수와 설치한 wheel 구성을 확인해야 하며, A100에서 Intel CPU/XPU 확장을 설치하는 것으로 해결되는 문제는 아니다. 기본 BF16 편집은 bitsandbytes 양자화를 요청하지 않으므로 갱신된 코드는 일반 가중치의 HF 클래스 import에서 사용하지 않는 bitsandbytes 탐지도 제외한다. 시스템 패키지는 삭제하지 않는다. 다만 로컬 text_encoder/transformer config의 quantization_config가 bitsandbytes 또는 4/8bit 사용을 명시하면 필요한 backend를 숨기지 않는다. 이 경우에는 해당 양자화 모델에 맞는 Torch/CUDA용 bitsandbytes 설치가 필요하다. 로그 뒤에 작업이 계속된다면 패키지 자체가 출력한 경고일 수도 있으므로, 이 메시지만으로 전체 작업 종료나 속도 저하의 원인을 단정하지 않는다. 이 수정은 기본 BF16 모델을 4bit로 바꾸거나 추론을 가속하는 기능이 아니다.
+
 Qwen 가중치는 Git에 포함하지 않는다. 온라인 준비 머신에서 **전체 Diffusers snapshot**을 준비해서 반입한다. 단일 `.safetensors`나 YOLOX `.pth` 파일만으로 실행할 수 없다.
 
 ```text
