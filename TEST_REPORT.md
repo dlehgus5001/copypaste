@@ -1,5 +1,13 @@
 # 실제 실행 테스트 결과
 
+## 2026-11-03 클래스별 합성 객체 크기
+
+`copy_paste.object_long_side_range_by_category`를 추가했다. COCO category ID별로 회전 전 tight foreground 긴 변의 정수 픽셀 범위를 설정하고, 매핑에 없는 클래스는 기존 공통 범위 또는 가중치 목록을 사용한다. 빈 매핑과 생략은 기존 픽셀·metadata·난수 흐름을 유지한다. 고정 크기는 `[N, N]`으로 지정한다. 잘못된 category ID와 범위는 시작 시 거부한다. 명시적인 CLI `--object-size`·`--object-size-range`는 모든 클래스 크기를 덮어쓰고 매핑을 제거하며, 적용한 override를 stderr startup 로그에 알린다. 그 밖의 합성 옵션은 매핑을 유지한다. 기존 샘플 JSON은 변경하지 않았다.
+
+새 Python 3.12.14 CPU 검증 환경에서 torch 2.8.0+cpu·torchvision 0.23.0+cpu·NumPy 1.26.4·OpenCV 4.11.0.86·TensorBoard 2.16.2를 사용했다. pip check는 No broken requirements이며 공식 YOLOX 원본 170개 파일 hash 검증을 통과했다. 네트워크 차단 아래 클래스 크기·기존 합성·export·클래스 중복 방지·패치·객체 색상/표면 효과 관련 **128 passed, 0 failed, 37 warnings**, 84.76초다([`reports/pytest-class-sizes-regression.xml`](reports/pytest-class-sizes-regression.xml)). 새 클래스 크기 테스트 20개가 이 실행에 포함된다. 초기 별도 실행은 export 추가 전 **19 passed**, 19.27초였다([`reports/pytest-class-sizes.xml`](reports/pytest-class-sizes.xml)).
+
+비연속 COCO category ID 7·29를 사용해 online/online_patch에서 서로 다른 실제 합성 크기, class index와 category ID 구분, 전역 범위·가중치 목록 fallback, 최종 마스크와 박스 정합, seed 재현을 확인했다. 0/2 Worker의 실제 TrainTransform·Loader 결과와 CLI 우선순위·config 불변, 알 수 없는 클래스·비정규 ID 문자열·잘못된 범위를 검사했다. 공개 preview·CPU train을 두 모드에서 실행해 크기 metadata·유한 양의 loss·checkpoint의 클래스별 설정 저장을 확인했고 일반 online COCO export의 박스 크기도 확인했다. 이번 검사는 CPU 변환·학습 경로의 관련 회귀이며 CUDA 학습이나 실제 항공영상 정확도 개선을 검증한 결과는 아니다.
+
 ## 2026-10-22 미사용 bitsandbytes CUDA 라이브러리 import 충돌 우회
 
 기본 BF16 Qwen 편집에는 bitsandbytes 양자화가 필요하지 않지만, 이미 설치된 bitsandbytes를 PEFT가 탐지·import하면서 누락된 CUDA native library 오류를 낼 수 있었다. 일반 가중치의 HF 클래스 import에서 미사용 bitsandbytes도 탐지 제외하도록 수정했다. text_encoder/transformer config에 bitsandbytes quantization_config 또는 4/8bit 로딩 플래그가 있으면 해당 backend는 숨기지 않는다. 실제 양자화에 필요한 라이브러리 오류를 조용히 무시하거나 가중치를 다른 정밀도로 바꾸지 않는다. 탐지 함수는 import 후 복원하며 시스템 패키지는 수정하지 않는다.

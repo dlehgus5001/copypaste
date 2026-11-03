@@ -141,6 +141,8 @@ class OnlineCopyPasteDataset(Dataset):
                 raise ValueError("object_size_weights must have one finite positive weight per size")
             weights = np.asarray(weights, dtype=np.float64)
             self.size_probabilities = weights / weights.sum()
+        self.object_size_ranges_by_category = self._category_size_ranges(
+            config.get("object_long_side_range_by_category", {}))
         self.distribution_source = str(config.get("distribution_source", "uncalibrated_sample_pixels"))
         self.min_visible_fraction = self._nonnegative(config.get("min_visible_fraction", 0.25), "min_visible_fraction")
         if self.min_visible_fraction > 1:
@@ -201,6 +203,27 @@ class OnlineCopyPasteDataset(Dataset):
         if not isinstance(value, bool):
             raise ValueError(f"{name} must be boolean")
         return value
+
+    def _category_size_ranges(self, value):
+        name = "object_long_side_range_by_category"
+        if not isinstance(value, dict):
+            raise ValueError(f"{name} must map COCO category IDs to [MIN, MAX] pixel ranges")
+        result = {}
+        for key, bounds in value.items():
+            if isinstance(key, bool) or not isinstance(key, (str, int)):
+                raise ValueError(f"{name} keys must be COCO category IDs")
+            try:
+                category = int(key)
+            except ValueError as exc:
+                raise ValueError(f"{name} key {key!r} must be a COCO category ID") from exc
+            if isinstance(key, str) and str(category) != key:
+                raise ValueError(f"{name} key {key!r} must be a canonical integer category ID")
+            if category not in self.class_index:
+                raise ValueError(f"{name} category {category} is absent from the validation COCO taxonomy")
+            if category in result:
+                raise ValueError(f"{name} repeats category {category}")
+            result[category] = _pair(bounds, f"{name}[{key!r}]", integer=True, minimum=2)
+        return result
 
     @staticmethod
     def _positive_int(value, name):
@@ -360,10 +383,11 @@ class OnlineCopyPasteDataset(Dataset):
                                   else int(rng.integers(len(self.objects)))]
             obj = self._read_image(source["image_path"])
             mask = self._read_mask(source["mask_path"], obj.shape[:2])
-            if self.object_size_range is None:
+            size_range = self.object_size_ranges_by_category.get(source["category_id"], self.object_size_range)
+            if size_range is None:
                 long_side = float(rng.choice(self.object_sizes, p=self.size_probabilities))
             else:
-                long_side = float(rng.integers(self.object_size_range[0], self.object_size_range[1] + 1))
+                long_side = float(rng.integers(size_range[0], size_range[1] + 1))
             angle = float(rng.uniform(*self.rotation))
             obj, mask = transform_object(obj, mask, long_side, angle)
             obj_height, obj_width = mask.shape

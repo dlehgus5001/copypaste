@@ -52,6 +52,8 @@ python run.py train --mode online --config configs/online.json --device cuda \
 
 학습 횟수는 `configs/online.json`의 `max_epoch`, EPOCH당 합성할 이미지 분량은 `copy_paste.epoch_length`, 배치 크기는 `batch_size`에서 지정합니다. 객체 크기는 회전 전 긴 변 기준이며 `--object-size 24`를 쓰면 24픽셀로 고정할 수 있습니다.
 
+객체 종류별 크기는 사용하는 JSON의 `copy_paste.object_long_side_range_by_category`에서 지정합니다. 예를 들어 `{"1": [48, 64], "3": [80, 96]}`이면 COCO category ID 1은 48~64픽셀, 3은 80~96픽셀로 합성합니다. `[64, 64]`는 고정 크기이고, 지정하지 않은 클래스는 공통 크기 설정을 따릅니다. 미리보기와 학습에 동일하게 적용됩니다. **클래스별 JSON을 사용할 때는 `--object-size`·`--object-size-range`를 명령에서 빼세요.** 이 CLI 옵션은 모든 클래스의 크기를 덮어쓰며 적용 시 로그로 알립니다. [전체 예시](configs/ONLINE_DATA.md)를 참고하세요.
+
 합성 객체의 색이 너무 선명하면 `preview` 또는 `train` 명령에 `--object-saturation-range 0.4 0.7`을 추가해 객체 채도만 낮출 수 있습니다. 객체 대비도 줄이려면 `--object-contrast-range 0.85 0.95`를 함께 사용합니다. 계속 적용하려면 실제 설정의 `copy_paste`에 `object_saturation_range`, `object_contrast_range`를 저장하세요. 두 옵션의 기본값은 원래 색을 유지하는 `[1, 1]`입니다.
 
 객체에만 약한 블러와 흙색 얼룩을 넣으려면 `--object-blur-sigma-range 0.4 0.8 --object-dirt-strength-range 0.2 0.45`를 추가합니다. 이때 채도는 `--object-saturation-range 0.8 1.0`처럼 비교적 유지한 상태에서 확인할 수 있습니다. 두 효과의 기본값은 `[0, 0]`으로 꺼져 있습니다. 흙색과 JSON 설정은 [객체 블러와 흙이 묻은 표면](configs/ONLINE_DATA.md#객체-블러와-흙이-묻은-표면)을 참고하세요.

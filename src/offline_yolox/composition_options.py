@@ -3,6 +3,8 @@ import argparse
 import copy
 import math
 
+from .startup import report
+
 
 def add_composition_arguments(parser):
     group = parser.add_argument_group("online composition")
@@ -15,9 +17,9 @@ def add_composition_arguments(parser):
                        help="Request this fixed number of objects per composite")
     sizes = group.add_mutually_exclusive_group()
     sizes.add_argument("--object-size", type=int, metavar="PIXELS",
-                       help="Fixed foreground long-side size before rotation (pixels, >=2)")
+                       help="Fixed foreground long-side size before rotation (pixels, >=2); overrides per-class sizes")
     sizes.add_argument("--object-size-range", type=int, nargs=2, metavar=("MIN", "MAX"),
-                       help="Uniform inclusive foreground long-side range before rotation")
+                       help="Uniform inclusive foreground long-side range before rotation; overrides per-class sizes")
     group.add_argument("--object-saturation-range", type=float, nargs=2, metavar=("MIN", "MAX"),
                        help="Foreground saturation factors: 0=gray, 1=original (default: 1 1)")
     group.add_argument("--object-contrast-range", type=float, nargs=2, metavar=("MIN", "MAX"),
@@ -72,6 +74,8 @@ def composition_config(config, args):
         if size < 2:
             raise ValueError("--object-size must be at least 2 pixels")
         settings.pop("object_long_side_range", None)
+        if settings.pop("object_long_side_range_by_category", None):
+            report("--object-size overrides object_long_side_range_by_category for all classes")
         settings["object_long_side_pixels"] = [size]
         settings["object_size_weights"] = [1]
     elif size_range is not None:
@@ -79,6 +83,8 @@ def composition_config(config, args):
             raise ValueError("--object-size-range requires 2 <= MIN <= MAX")
         settings.pop("object_long_side_pixels", None)
         settings.pop("object_size_weights", None)
+        if settings.pop("object_long_side_range_by_category", None):
+            report("--object-size-range overrides object_long_side_range_by_category for all classes")
         settings["object_long_side_range"] = list(size_range)
     for name in ("unique_objects", "unique_classes", "require_object_count"):
         value = getattr(args, name, None)

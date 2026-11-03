@@ -63,6 +63,8 @@
 
 패치 안에서 **같은 클래스는 최대 한 개씩** 배치하려면 `copy_paste.unique_classes: true` 또는 `--unique-classes`를 사용한다. 클래스(COCO category ID)를 먼저 중복 없이 선택하고 각 클래스 안에서 소스 파일을 랜덤 선택하므로 `1번+3번`은 가능하고 `1번+1번`은 불가능하다. `object_count: [0, 5]`이면 빈 패치를 포함해 0~5개 클래스를 선택하며, `[5, 5]`이면 5개 클래스를 요청한다. 최대 요청 수보다 자산이 있는 클래스 수가 적으면 시작 시 오류가 발생한다. 기본값 `false`와 기존 파일 중복 방지 옵션 `unique_objects`의 동작은 유지한다. 이 옵션은 합성 학습·미리보기에 적용되며 실제 검증 이미지의 객체를 제거하지 않는다. 같은 옵션을 일반 `online` 모드의 COCO export에도 사용할 수 있다.
 
+클래스마다 합성 크기를 다르게 하려면 `copy_paste.object_long_side_range_by_category`에 `{"1": [48, 64], "3": [80, 96]}`처럼 COCO category ID별 범위를 지정한다. 단위는 최종 합성 캔버스의 회전 전 객체 긴 변 픽셀이며, 패치 크기·Qwen 작업 해상도와 별개다. 지정하지 않은 클래스는 기존 공통 크기 설정을 따른다. 클래스별 설정을 사용할 때는 전체 크기를 덮어쓰는 CLI `--object-size`·`--object-size-range`를 제거한다. 자세한 설정은 [ONLINE_DATA.md](ONLINE_DATA.md)를 참고한다.
+
 `original_patch`: 같은 격자 패치를 EPOCH마다 섞어 순회한다. 위치를 매번 랜덤으로 다시 자르는 방식은 아니다. EPOCH당 이미지 수는 빈 패치 정책을 적용한 격자 패치 수다. `online_patch`의 EPOCH당 이미지 수는 `copy_paste.epoch_length`다. iteration 수는 `ceil(패치 수 / batch_size)`이고, 총 횟수는 `max_epoch`으로 설정한다. 실제 CUDA Trainer의 무한 Sampler에서는 이 크기를 기준으로 EPOCH 길이를 계산한다.
 
 원본은 필요할 때 디코딩하고 패치 픽셀을 메모리에서 자른다. 이미지를 미리 타일 파일로 만들거나 모든 픽셀을 캐싱하지 않으므로 같은 큰 원본을 여러 번 디코딩할 수 있다. 디코딩 비용과 Worker별 메모리를 고려해 `num_workers`를 조절한다.

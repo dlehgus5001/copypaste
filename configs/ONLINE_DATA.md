@@ -100,6 +100,25 @@ Manifest 방식에서 `copy_paste.asset_root`는 객체와 배경의 공통 로�
 - `object_long_side_range: [16, 48]`: 객체마다 16~48픽셀의 정수를 균등하게 선택한다. 양 끝값을 포함하고 최소 크기는 2픽셀이다. 이 방식을 사용할 때는 `object_long_side_pixels`와 `object_size_weights`를 제거한다.
 - `object_long_side_pixels: [12, 18, 24, 32]`와 `object_size_weights: [1, 3, 3, 1]`: 목록의 크기를 가중치에 따라 선택한다. 예시에서는 18·24픽셀을 더 자주 선택한다. weight를 생략하면 같은 확률로 선택한다.
 
+클래스별로 다른 크기를 사용하려면 기존 `copy_paste` 안에 `object_long_side_range_by_category`를 추가한다. 키는 폴더명이나 0부터 시작하는 class index가 아닌 검증 COCO의 **category ID**다. 아래 값은 사용법 예시이며 실제 측정값은 아니다.
+
+```json
+"object_long_side_range": [48, 96],
+"object_long_side_range_by_category": {
+  "1": [48, 64],
+  "2": [56, 80],
+  "3": [64, 96],
+  "4": [80, 112],
+  "5": [96, 128]
+}
+```
+
+각 객체를 선택한 뒤 그 category의 범위에서 회전 전 긴 변을 정수 픽셀로 균등 선택한다. `[64, 64]`면 해당 클래스는 64픽셀로 고정한다. 가로·세로 비율은 유지하고 최종 보이는 마스크로 정답 박스를 다시 계산한다. 회전·부분 가림 이후 박스 긴 변은 요청한 값과 다를 수 있다. `online`·`online_patch` 학습, preview, 일반 online export가 같은 규칙을 사용한다. Qwen 변환 여부와 관계없이 적용된다.
+
+매핑에 없는 클래스는 기존 공통 범위 또는 가중치 목록을 사용한다. 매핑 생략과 `{}`는 기존 결과·난수 흐름을 유지한다. 알 수 없는 category ID나 잘못된 범위는 시작할 때 오류로 알린다. 기본 `online_patch.json`에는 이 항목을 추가하지 않았으므로, 필요할 때 실제 클래스 ID에 맞춰 추가한다. 기존 학습의 크기 설정을 바꾸고 가중치를 이어서 사용할 때는 `--checkpoint`를 사용한다. 설정이 달라지면 엄격한 `--resume`는 거부한다.
+
+**명령에 `--object-size`나 `--object-size-range`를 지정하면 클래스별 매핑을 제거하고 모든 클래스에 CLI 크기를 적용한다.** 이 경우 startup 로그로 override를 알린다. 클래스별 JSON을 사용하려면 해당 공통 크기 CLI 옵션을 빼야 한다. 다른 합성 CLI 옵션은 클래스별 크기 설정을 유지한다.
+
 실측 항공영상 크기 분포를 사용할 때는 학습 입력 해상도에서 측정한 긴 변 길이와 발생 빈도를 목록·가중치에 지정하고 `distribution_source`에 출처를 기록한다. 현재 샘플 크기는 기능 확인용이며 실제 항공 크기 분포라고 주장하지 않는다. Native multiscale을 활성화하면 합성 후 학습 입력 변경에 따라 Box와 객체 크기도 비례해 변한다. 지정한 pixels 기준을 유지하려면 `multiscale_range: 0`을 사용한다.
 
 `object_count`는 이미지 한 장에 넣을 최소·최대 객체 수다. `[5, 5]`이면 5개를 요청한다. `unique_objects: false`이면 같은 객체 이미지·마스크 세트를 여러 번 선택할 수 있고, `true`이면 한 이미지에서 서로 다른 세트를 선택한다. 서로 다른 클래스만 선택한다는 뜻은 아니다. `true`일 때는 요청한 수 이상의 세트를 폴더 또는 Manifest에 준비해야 한다.
