@@ -69,7 +69,7 @@ python run.py train --mode online_patch --config configs/online_patch.json \
   --device cuda --unique-classes
 ```
 
-위 클래스 중복 방지 명령은 실제 다중 클래스 데이터로 수정한 설정에서 사용하세요. 기본 단일 클래스 샘플 설정에서 객체 5개를 요청하면 클래스 부족 오류가 발생합니다.
+위 클래스 중복 방지 명령은 실제 다중 클래스 데이터로 수정한 설정에서 사용하세요. 단일 클래스 설정에서 서로 다른 클래스의 객체 5개를 요청하면 클래스 부족 오류가 발생합니다. 현재 `online_patch.json`은 5개 클래스와 클래스별 크기 설정을 포함하므로 `data_dir`·`val_ann`·`val_name`을 실제 category ID 1~5가 있는 검증 데이터에 맞춰야 합니다. 기존 `data/sample`의 단일 클래스 JSON과는 호환되지 않습니다.
 
 각 명령의 옵션은 `python run.py --help`, `python run.py train --help` 등으로 확인합니다. `train --mode original`은 `configs/original.json`, `train --mode online`은 `configs/online.json`을 기본으로 사용합니다. `--config`로 다른 설정을 지정할 수 있으며, 명시한 `--mode`와 설정의 모드가 다르면 오류로 종료합니다. C++ 빌드에는 시스템의 `gcc`·`g++`가 필요하고, 학습·평가 등의 네트워크 차단 실행에는 Linux의 `libseccomp`가 필요합니다.
 
