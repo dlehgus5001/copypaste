@@ -48,6 +48,8 @@ python run.py paste-multi \
 
 모든 클래스에 같은 범위를 적용하고 싶으면 `--object-size-range 48 96`을 추가한다. 이 CLI 옵션은 클래스별 범위를 덮어쓴다. 고정 크기는 `--object-size 64`다. 클래스별 크기를 사용하려면 이 두 옵션을 생략한다.
 
+붙이기 전 객체 블러는 config의 `copy_paste.object_blur_sigma_range`로 조절한다. 기본 `[0.4, 1.0]`은 객체 크기 변환 후 각 객체마다 sigma를 무작위로 골라 약한 Gaussian blur를 적용하고 배경에 붙인다. 배경과 이진 마스크·박스는 이 블러로 바뀌지 않는다. Harmonizer는 그 다음 합성 이미지의 색·조명을 보정한다. `--object-blur-sigma-range 0.8 1.5`를 추가하면 더 강한 범위를 사용할 수 있고, `--object-blur-sigma-range 0 0`은 블러를 끈다. 작은 객체는 과하게 흐려질 수 있으므로 before.png에서 확인하며 조절한다. `gaussian_blend_sigma`는 붙이는 경계의 알파 feathering, `blur_sigma`는 합성 전체에 적용하는 별도 옵션이므로 객체 블러와 구분한다.
+
 배경을 특정 파일로 고정하려면 `--background /path/background.png`를 추가한다. 해당 이미지 안에서 자르는 패치 위치는 여전히 무작위다. 경로 루트는 config의 `copy_paste.asset_root` 또는 `--asset-root /path/assets`로 바꾼다. 새 실행에서 다른 조합을 원하면 config의 `seed`를 바꾼다. 같은 seed·입력·설정은 같은 합성을 재현한다.
 
 ```text

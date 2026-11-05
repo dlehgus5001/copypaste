@@ -45,6 +45,7 @@
     "min_visible_pixels": 8,
     "min_box_side_pixels": 2,
     "gaussian_blend_sigma": 0.6,
+    "object_blur_sigma_range": [0.4, 1.0],
     "brightness_range": [1, 1],
     "blur_sigma": 0,
     "noise_std": 0

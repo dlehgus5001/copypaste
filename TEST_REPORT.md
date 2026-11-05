@@ -1,5 +1,11 @@
 # 실제 실행 테스트 결과
 
+## 2026-11-05 합성 전 객체 블러 기본 설정
+
+`configs/paste_multi.json`에 기존 객체 전용 옵션 `object_blur_sigma_range: [0.4, 1.0]`을 추가했다. 객체 크기 변환 후 무작위 Gaussian blur를 적용해 붙이고 그 결과를 Harmonizer에 전달한다. 합성 전체 blur는 0을 유지하며 기존 학습 config는 바꾸지 않았다. 사용 안내에 CLI 강도 조절·비활성화 방법을 추가했다.
+
+네트워크 차단 아래 변경된 config를 사용하는 다중 객체 관련 테스트 **9 passed, 0 failed, 0 skipped**, 17.76초를 확인했다([`reports/pytest-paste-multi-blur.xml`](reports/pytest-paste-multi-blur.xml)). 실제 공식 Harmonizer CLI 실행, 5개 클래스와 정답 마스크·박스 정합, 배경 픽셀 보존, seed 재현 및 출력 보호를 포함한다. 기존 객체 블러 연산을 재사용하는 설정 변경이며 실제 항공영상의 자연스러움·탐지 AP 개선을 검증한 결과는 아니다.
+
 ## 2026-11-05 내부 저장소의 Kornia Rust 버전 호환
 
 내부 pip 저장소가 kornia-rs 0.1.14까지만 제공해 기존 `==0.2.0` 요구를 설치하지 못하는 문제를 수정했다. Kornia 0.8.2의 배포 metadata는 `kornia_rs>=0.1.9`를 요구하므로 선택 requirements를 `kornia-rs>=0.1.9,<0.2`로 바꿨다. 기존 학습·Torch 요구사항은 변경하지 않았다.
