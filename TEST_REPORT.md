@@ -1,5 +1,15 @@
 # 실제 실행 테스트 결과
 
+## 2026-11-05 별도 합성과 실제 Harmonizer 전후 비교
+
+`python run.py paste-check`를 추가했다. COCO·학습 config 없이 배경·객체·이진 마스크를 지정해 합성하고, 로컬 Harmonizer로 색·조명을 보정하여 before/after/comparison·정답 박스·mask/alpha·metadata를 저장한다. 중앙 640 패치 또는 원본 배경 크기를 사용할 수 있고 크기·회전·위치·안쪽 feather·보정 강도를 설정한다. 부분 배치는 명시적으로 허용해야 하며, 원본과 기존 출력은 덮어쓰지 않는다. plain-only는 모델 없이 기본 합성만 저장하고 가짜 after 결과를 만들지 않는다. 보정 후 마스크 밖 배경 픽셀과 마스크 좌표·박스를 유지한다.
+
+공식 Harmonizer revision `48ecd70becbff50ccaf576db0e64212dbc494e26`의 소스 9개와 **실제 약 19MB 가중치**를 준비 도구로 다운로드·SHA256 검증했다. 이 코드는 외부 소스·가중치를 Git에 복사하지 않고, 별도 온라인 준비 도구로 수집해 폐쇄망에 반입하도록 구성했다. torch.load는 weights_only=True와 strict state loading을 사용하고, EfficientNet은 다운로드 없는 from_name으로 생성한다. 새 선택 의존성은 kornia 0.8.2·kornia-rs 0.2.0이며 pip check는 No broken requirements다.
+
+Python 3.12.14 / Torch 2.8.0+cpu / torchvision 0.23.0+cpu / NumPy 1.26.4 / OpenCV 4.11.0.86에서 네트워크 차단 아래 관련 테스트 **16 passed, 0 failed**, 결과는 [`reports/pytest-paste-check.xml`](reports/pytest-paste-check.xml)에 있다. 기하 좌표·tight size·부분 배치·padding·마스크 안쪽 feather·강도·배경 보호·파일 불변·출력 보호·준비 도구 checksum/atomic 저장을 검사했다. 실제 고정 checkpoint로 공개 CLI를 실행해 전후 이미지와 유한 보정값·배경 보존을 확인했다. ABI 오류를 내는 모의 FlashAttention이 있어도 Kornia의 불필요한 선택 확장을 import하지 않고 실제 모델이 동작함을 확인했고, import 상태 복원도 검사했다. 기존 기본 도움말·학습 도움말/모드 오류 회귀는 별도 **2 passed**, 8.96초다([`reports/pytest-paste-cli-regression.xml`](reports/pytest-paste-cli-regression.xml)).
+
+별도 실제 640×640 개발용 합성 샘플에서 모델 로딩 약 0.287초, 보정 forward 약 0.216초였으며 foreground 평균 절대 변화는 약 20.19/255, 배경 픽셀 보존은 True였다. [`reports/harmonizer-preview-runtime.json`](reports/harmonizer-preview-runtime.json)에 실제 가중치 hash·버전·수치를 기록했다. 특정 CPU 환경·샘플의 1회 측정으로 A100 속도나 실제 항공사진 품질을 의미하지 않는다. GPU 실행·사용자 데이터에서의 자연스러움·탐지 AP 개선은 미검증이다. 공식 YOLOX 원본 170개 파일 hash 검사도 통과했다. 이 기능은 별도 확인 도구이며 학습에 자동 적용하지 않고 실제 항공 crop의 질감 전이도 수행하지 않는다.
+
 ## 2026-11-03 클래스별 합성 객체 크기
 
 `copy_paste.object_long_side_range_by_category`를 추가했다. COCO category ID별로 회전 전 tight foreground 긴 변의 정수 픽셀 범위를 설정하고, 매핑에 없는 클래스는 기존 공통 범위 또는 가중치 목록을 사용한다. 빈 매핑과 생략은 기존 픽셀·metadata·난수 흐름을 유지한다. 고정 크기는 `[N, N]`으로 지정한다. 잘못된 category ID와 범위는 시작 시 거부한다. 명시적인 CLI `--object-size`·`--object-size-range`는 모든 클래스 크기를 덮어쓰고 매핑을 제거하며, 적용한 override를 stderr startup 로그에 알린다. 그 밖의 합성 옵션은 매핑을 유지한다. 기존 샘플 JSON은 변경하지 않았다.

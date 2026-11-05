@@ -20,6 +20,7 @@ COMMANDS = {
     "diagnose": ["-m", "offline_yolox.diagnose"],
     "predict": ["-m", "offline_yolox.predict"],
     "adapt-objects": ["-m", "offline_yolox.qwen_edit"],
+    "paste-check": ["-m", "offline_yolox.paste_check"],
     "validate-gpu": ["scripts/validate_gpu.py"],
 }
 

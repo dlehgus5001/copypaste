@@ -1,0 +1,16 @@
+{
+  "repository": "https://github.com/ZHKKKe/Harmonizer",
+  "revision": "48ecd70becbff50ccaf576db0e64212dbc494e26",
+  "files": {
+    "src/model/__init__.py": "9e2a3caf3411c17082cdb433b0cfe4d47b49ed988d322f383e9bed79ddf01281",
+    "src/model/backbone/__init__.py": "76407fc8bb75efde77dad2c03b605b987ebfcb97d897e5cc6cf51ae977e2823e",
+    "src/model/backbone/efficientnet/__init__.py": "d2d429d753d9bbdad8265091acd38e1d1f4dfb2083d6ec71f00893ed9cd54511",
+    "src/model/backbone/efficientnet/model.py": "6ed1e3198a164a9217297ca961d1e2898734d24bb7979f80e08eb43c5f9d62a5",
+    "src/model/backbone/efficientnet/utils.py": "d66adc6623451e42259ab8033eb6648a54815fb25576a47f0d0472269af92b26",
+    "src/model/enhancer.py": "2f0692e845d46ce458a88ce69d2ff4be0ee95029f7a51f546bc6a570a46553eb",
+    "src/model/filter.py": "4e1e80f30ed158e578c2e263c478c8f3b3b24d950963f907d954da7abb96eae8",
+    "src/model/harmonizer.py": "c5219027f52038a15997c901b656ed3e856b8b709db8ba69670966ee22ed1344",
+    "src/model/module.py": "9e745183259436a93ea03c71fb88b1e05325b2a495214e699b01ec3842d1db0b",
+    "pretrained/harmonizer.pth": "401dd03706fc6fa37b4600ae4c643a2fa9ad0f11351acfbf030cb5d3490de6ca"
+  }
+}

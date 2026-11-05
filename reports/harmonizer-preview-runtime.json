@@ -1,0 +1,27 @@
+{
+  "python_profile": "Python 3.12 CPU validation",
+  "packages": {
+    "torch": "2.8.0+cpu",
+    "torchvision": "0.23.0+cpu",
+    "numpy": "1.26.4",
+    "opencv-python-headless": "4.11.0.86",
+    "kornia": "0.8.2",
+    "kornia-rs": "0.2.0"
+  },
+  "actual_official_pretrained_weights_used": true,
+  "source_revision": "48ecd70becbff50ccaf576db0e64212dbc494e26",
+  "checkpoint_sha256": "401dd03706fc6fa37b4600ae4c643a2fa9ad0f11351acfbf030cb5d3490de6ca",
+  "network_blocked_for_inference": true,
+  "sample_kind": "Generated sample background/object, not user aerial data",
+  "canvas_size": [
+    640,
+    640
+  ],
+  "device": "cpu",
+  "model_load_seconds": 0.2865101330098696,
+  "harmonize_seconds": 0.21555597500992008,
+  "foreground_mean_absolute_pixel_change": 20.187234042553193,
+  "background_pixels_preserved": true,
+  "gpu_execution_tested": false,
+  "aerial_detection_accuracy_verified": false
+}

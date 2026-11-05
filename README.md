@@ -107,6 +107,18 @@ python run.py train --mode online --config configs/online_folders.json --device 
 
 `configs/online_folders.json`에서 `max_epoch`, `batch_size`, `copy_paste.epoch_length`를 바꾸면 학습 횟수와 배치 크기, EPOCH당 이미지 분량을 조절합니다. 이 파일은 작은 샘플 모델·입력 크기와 `data/sample`의 검증 데이터를 사용하므로, 실제 학습에서는 `data_dir`·`num_classes`·모델 설정도 맞추세요. 검증 클래스가 하나라면 위 5개 폴더의 객체는 모두 같은 클래스입니다. 5개 객체는 전체 파일 목록에서 랜덤으로 선택하며, 폴더마다 하나씩 선택하는 규칙은 아닙니다. 폴더별 클래스 지정과 경로 변경은 [configs/ONLINE_DATA.md](configs/ONLINE_DATA.md)를 참고하세요.
 
+## 배경·객체를 직접 붙여 Harmonizer 전후 확인하기
+
+COCO JSON이나 학습 설정 없이 `python run.py paste-check`에 배경·객체·마스크 파일을 직접 지정할 수 있습니다. 기본 합성, Harmonizer 보정, 나란히 비교 이미지와 정답 박스를 저장합니다. 모델 준비·설치는 [HARMONIZER_PREVIEW.md](HARMONIZER_PREVIEW.md)를 참고하세요.
+
+```bash
+python run.py paste-check --background data/assets/background/1.png \
+  --object data/assets/object/object_1/001.png --mask data/assets/mask/object_1/001.png \
+  --object-size 64 --output outputs/paste_check_v1
+```
+
+`comparison.png`에서 전후를 확인합니다. 기본 캔버스는 배경의 중앙 640×640 패치이며 객체도 중앙에 배치합니다. `--position X Y`, `--object-size`, `--strength`로 위치·크기·보정 강도를 바꿀 수 있습니다. `--plain-only`는 모델 없이 기본 합성만 저장합니다. 보정은 마스크 내부 색·조명에 적용하며, 별도 항공 참조 사진의 질감 전이와 학습 자동 적용은 포함하지 않습니다.
+
 ## Qwen으로 객체 외형을 항공영상에 맞추기
 
 `python run.py adapt-objects --config configs/qwen_edit.json --limit 1`로 객체 사진·마스크와 같은 클래스의 실제 항공 crop을 Qwen-Image-Edit-2511에 입력할 수 있습니다. **항공 crop에는 마스크가 필요 없습니다.** 로컬 모델 전체 폴더와 선택 의존성 `requirements-qwen.txt`가 필요하며 네트워크 다운로드는 실행하지 않습니다.

@@ -7,6 +7,7 @@ artifacts/
 outputs/
 models/
 qwen-wheelhouse/
+harmonizer-wheelhouse/
 __pycache__/
 *.py[cod]
 *.egg-info/
