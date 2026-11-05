@@ -1,5 +1,11 @@
 # 실제 실행 테스트 결과
 
+## 2026-11-05 내부 저장소의 Kornia Rust 버전 호환
+
+내부 pip 저장소가 kornia-rs 0.1.14까지만 제공해 기존 `==0.2.0` 요구를 설치하지 못하는 문제를 수정했다. Kornia 0.8.2의 배포 metadata는 `kornia_rs>=0.1.9`를 요구하므로 선택 requirements를 `kornia-rs>=0.1.9,<0.2`로 바꿨다. 기존 학습·Torch 요구사항은 변경하지 않았다.
+
+검증 환경의 kornia-rs를 실제 0.1.14로 교체하고 네트워크 차단 아래 단일·다중 객체 도구 관련 테스트 **25 passed, 0 failed, 0 skipped**, 20.01초를 확인했다([`reports/pytest-harmonizer-kornia-rs014.xml`](reports/pytest-harmonizer-kornia-rs014.xml)). 실제 공식 Harmonizer checkpoint를 로드하는 CLI 검사가 포함되며 pip check와 수정 requirements의 설치 dry-run도 통과했다. Python 3.12 / Torch 2.8 CPU / Kornia 0.8.2 환경의 검사이며 사용자 내부 저장소나 GPU에서 직접 실행한 결과는 아니다.
+
 ## 2026-11-05 다중 객체 합성·전체 마스크·Harmonizer 자동 연결
 
 `python run.py paste-multi --config configs/paste_multi.json`을 추가했다. 객체·마스크 폴더와 배경을 읽어 랜덤 패치에 합성하고, 최종 합성 좌표의 개별 마스크와 합집합 마스크를 생성한다. 합성 이미지와 합집합 마스크를 실제 Harmonizer에 전달해 전후·비교·정답 박스·배치 metadata까지 저장한다. COCO annotation이나 탐지 모델 checkpoint는 필요 없다. 기본 config는 클래스 1~5를 각 한 번씩 배치하며 클래스별 크기 범위, 공통 CLI 크기 override, 고정 배경 파일, 모델 없는 plain-only를 지원한다. 모델은 여러 합성 이미지에 한 번만 로드한다. 기존 학습 모드는 변경하지 않았다.

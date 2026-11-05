@@ -1,3 +1,4 @@
 # Optional Harmonizer preview; install after the existing YOLOX requirements.
 kornia==0.8.2
-kornia-rs==0.2.0
+# Kornia 0.8.2 requires >=0.1.9; use versions available on the internal index.
+kornia-rs>=0.1.9,<0.2

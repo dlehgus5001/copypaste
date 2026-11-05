@@ -83,7 +83,7 @@ pip download --only-binary=:all: --no-deps -r requirements-harmonizer.txt \
   --dest harmonizer-wheelhouse
 ```
 
-첫 명령은 공식 저장소의 고정 revision에서 필요한 소스 9개와 약 19MB의 `harmonizer.pth`를 다운로드하고 SHA256을 검사한다. 소스·가중치와 `SOURCE.json`이 `models/Harmonizer/`에 저장된다. 임시 폴더에서 모두 검증한 뒤 완성 폴더로 이동하며 기존 폴더는 덮어쓰지 않는다. Torch가 없어도 준비 스크립트는 실행할 수 있다. 두 번째 명령은 **기존 YOLOX 환경에 Torch·torchvision·packaging이 설치되어 있다는 전제**에서 추가 패키지 kornia 0.8.2·kornia-rs 0.2.0만 수집한다. 대상과 같은 Python 3.12·OS·CPU 아키텍처에서 준비한다.
+첫 명령은 공식 저장소의 고정 revision에서 필요한 소스 9개와 약 19MB의 `harmonizer.pth`를 다운로드하고 SHA256을 검사한다. 소스·가중치와 `SOURCE.json`이 `models/Harmonizer/`에 저장된다. 임시 폴더에서 모두 검증한 뒤 완성 폴더로 이동하며 기존 폴더는 덮어쓰지 않는다. Torch가 없어도 준비 스크립트는 실행할 수 있다. 두 번째 명령은 **기존 YOLOX 환경에 Torch·torchvision·packaging이 설치되어 있다는 전제**에서 추가 패키지 kornia 0.8.2·kornia-rs 0.1.x(>=0.1.9)만 수집한다. 대상과 같은 Python 3.12·OS·CPU 아키텍처에서 준비한다.
 
 `models/Harmonizer/` 전체와 `harmonizer-wheelhouse/`를 폐쇄망 서버로 복사한다. 서버의 기존 학습용 Python 환경에서 설치한다.
 
@@ -93,6 +93,8 @@ python -m pip install --no-index --find-links=harmonizer-wheelhouse \
 ```
 
 내부 pip 저장소에 패키지가 있으면 `python -m pip install -r requirements-harmonizer.txt`로 설치할 수 있다. 외부 소스·가중치·wheel 폴더는 Git 및 소스 압축에 포함하지 않으며 별도로 반입한다. 기본 requirements와 Qwen 패키지는 변경하지 않았다. Diffusers·FlashAttention·bitsandbytes는 이 명령에서 사용하지 않는다.
+
+이전 파일의 `kornia-rs==0.2.0` 고정 때문에 내부 저장소에서 설치되지 않았다면 최신 파일로 갱신하고 위 설치 명령을 다시 실행한다. Kornia 0.8.2의 의존 조건은 `kornia_rs>=0.1.9`이며, 0.2.0은 필수가 아니다. 현재 파일은 `kornia-rs>=0.1.9,<0.2`로 내부 저장소의 0.1.14 등을 허용한다.
 
 Kornia는 다른 기능의 초기화 과정에서 FlashAttention import를 시도할 수 있다. Harmonizer는 색 보정만 사용하므로 해당 선택 모듈을 import 단계에서 제외하고 원래 상태로 복원한다. 기존 FlashAttention 바이너리 불일치가 이 색 보정 명령을 막지 않도록 처리했으며 시스템 패키지는 수정하지 않는다.
 
