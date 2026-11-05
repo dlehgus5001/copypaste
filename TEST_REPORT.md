@@ -1,5 +1,11 @@
 # 실제 실행 테스트 결과
 
+## 2026-11-05 합성 전 객체 채도·대비 기본 설정
+
+`configs/paste_multi.json`에 기존 객체 전용 옵션 `object_saturation_range: [0.5, 0.8]`, `object_contrast_range: [0.8, 0.95]`를 추가했다. 크기 변환 후 채도·대비를 낮추고 기존 블러를 적용한 뒤 배경에 붙여 Harmonizer에 전달한다. 배경·마스크·박스와 기존 학습 config는 바꾸지 않았다. 사용 안내에 조절 범위·CLI override·원래 색 복원 방법을 기록했다.
+
+네트워크 차단 아래 변경된 config를 사용하는 다중 객체 검사 9개와 객체 색 보정의 배경·마스크 보존 검사 1개, 총 **10 passed, 0 failed, 0 skipped**, 10.37초를 확인했다([`reports/pytest-paste-multi-muted.xml`](reports/pytest-paste-multi-muted.xml)). 실제 공식 Harmonizer CLI 실행도 포함된다. 실제 항공영상의 시각적 적합성이나 탐지 AP 개선을 검증한 결과는 아니다.
+
 ## 2026-11-05 합성 전 객체 블러 기본 설정
 
 `configs/paste_multi.json`에 기존 객체 전용 옵션 `object_blur_sigma_range: [0.4, 1.0]`을 추가했다. 객체 크기 변환 후 무작위 Gaussian blur를 적용해 붙이고 그 결과를 Harmonizer에 전달한다. 합성 전체 blur는 0을 유지하며 기존 학습 config는 바꾸지 않았다. 사용 안내에 CLI 강도 조절·비활성화 방법을 추가했다.

@@ -50,6 +50,8 @@ python run.py paste-multi \
 
 붙이기 전 객체 블러는 config의 `copy_paste.object_blur_sigma_range`로 조절한다. 기본 `[0.4, 1.0]`은 객체 크기 변환 후 각 객체마다 sigma를 무작위로 골라 약한 Gaussian blur를 적용하고 배경에 붙인다. 배경과 이진 마스크·박스는 이 블러로 바뀌지 않는다. Harmonizer는 그 다음 합성 이미지의 색·조명을 보정한다. `--object-blur-sigma-range 0.8 1.5`를 추가하면 더 강한 범위를 사용할 수 있고, `--object-blur-sigma-range 0 0`은 블러를 끈다. 작은 객체는 과하게 흐려질 수 있으므로 before.png에서 확인하며 조절한다. `gaussian_blend_sigma`는 붙이는 경계의 알파 feathering, `blur_sigma`는 합성 전체에 적용하는 별도 옵션이므로 객체 블러와 구분한다.
 
+붙이기 전 색상도 기본적으로 낮춘다. `copy_paste.object_saturation_range: [0.5, 0.8]`은 채도를 낮춰 색의 선명함을 줄이고, `object_contrast_range: [0.8, 0.95]`는 명암 차이를 약하게 줄인다. 객체마다 범위 안에서 값을 무작위로 선택한다. 처리 순서는 크기 변환 → 객체 채도·대비 조정 → 객체 블러 → 배경 합성 → Harmonizer다. 배경 색과 마스크·박스는 이 객체 효과로 바뀌지 않는다. 원래 채도·대비를 사용하려면 두 범위를 각각 `[1, 1]`로 지정한다. CLI에서는 `--object-saturation-range 0.5 0.8 --object-contrast-range 0.8 0.95`로 덮어쓸 수 있다. `before.png`에서 보정 전 색을 확인하며, Harmonizer가 이후 색을 추가로 조절하므로 `after.png`도 함께 확인한다.
+
 배경을 특정 파일로 고정하려면 `--background /path/background.png`를 추가한다. 해당 이미지 안에서 자르는 패치 위치는 여전히 무작위다. 경로 루트는 config의 `copy_paste.asset_root` 또는 `--asset-root /path/assets`로 바꾼다. 새 실행에서 다른 조합을 원하면 config의 `seed`를 바꾼다. 같은 seed·입력·설정은 같은 합성을 재현한다.
 
 ```text
