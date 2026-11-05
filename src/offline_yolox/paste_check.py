@@ -172,14 +172,14 @@ def _write_png(path, image):
         handle.write(encoded.tobytes())
 
 
-def _comparison(before, after):
+def _comparison(before, after, after_label="AFTER: Harmonizer"):
     height, width = before.shape[:2]
     canvas = Image.new("RGB", (width * 2, height + 28), "white")
     canvas.paste(Image.fromarray(before[:, :, ::-1]), (0, 28))
     canvas.paste(Image.fromarray(after[:, :, ::-1]), (width, 28))
     draw = ImageDraw.Draw(canvas)
     draw.text((8, 7), "BEFORE: plain paste", fill="black")
-    draw.text((width + 8, 7), "AFTER: Harmonizer", fill="black")
+    draw.text((width + 8, 7), after_label, fill="black")
     return np.asarray(canvas)[:, :, ::-1].copy()
 
 

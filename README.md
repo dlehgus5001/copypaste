@@ -109,6 +109,15 @@ python run.py train --mode online --config configs/online_folders.json --device 
 
 ## 배경·객체를 직접 붙여 Harmonizer 전후 확인하기
 
+객체 5개와 각각의 마스크를 배경에 무작위 크기·위치로 붙이고, **합성 좌표의 전체 마스크 생성 → Harmonizer 보정**까지 한 번에 실행하려면:
+
+```bash
+python run.py paste-multi --config configs/paste_multi.json \
+  --count 10 --output outputs/paste_multi_v1
+```
+
+`data/assets/object/object_1~5/`와 대응하는 `mask/object_1~5/`, `background/`를 읽습니다. 기본은 클래스마다 한 번씩 5개이며, 클래스별 랜덤 크기는 새 config의 `copy_paste.object_long_side_range_by_category`에서 바꿉니다. `--object-size-range 48 96`을 추가하면 모든 클래스에 같은 범위를 적용합니다. 각 `sample_0000/` 안에 `before.png`, 전체 `mask.png`, 개별 `masks/`, `after.png`, `comparison.png`, `boxes.png`를 저장합니다. 모델 준비와 폴더 예시는 [HARMONIZER_PREVIEW.md](HARMONIZER_PREVIEW.md)를 참고하세요. `--plain-only`를 추가하면 모델 없이 합성·마스크만 생성합니다.
+
 COCO JSON이나 학습 설정 없이 `python run.py paste-check`에 배경·객체·마스크 파일을 직접 지정할 수 있습니다. 기본 합성, Harmonizer 보정, 나란히 비교 이미지와 정답 박스를 저장합니다. 모델 준비·설치는 [HARMONIZER_PREVIEW.md](HARMONIZER_PREVIEW.md)를 참고하세요.
 
 ```bash

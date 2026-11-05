@@ -1,0 +1,68 @@
+{
+  "command": "python run.py paste-multi --config artifacts/paste-multi-demo.json --count 2 --device cpu --output outputs/paste_multi_real_check",
+  "versions": {
+    "torch": "2.8.0+cpu",
+    "torchvision": "0.23.0+cpu",
+    "kornia": "0.8.2"
+  },
+  "model": {
+    "device": "cpu",
+    "checkpoint": "/workspace/copypaste/models/Harmonizer/pretrained/harmonizer.pth",
+    "checkpoint_sha256": "401dd03706fc6fa37b4600ae4c643a2fa9ad0f11351acfbf030cb5d3490de6ca",
+    "repository": "/workspace/copypaste/models/Harmonizer",
+    "source_revision": "48ecd70becbff50ccaf576db0e64212dbc494e26",
+    "load_seconds": 0.37503321102121845
+  },
+  "samples": [
+    {
+      "shape": [
+        640,
+        640,
+        3
+      ],
+      "count": 5,
+      "requested_sizes": {
+        "1": 49.0,
+        "5": 112.0,
+        "3": 69.0,
+        "4": 107.0,
+        "2": 76.0
+      },
+      "checks": {
+        "five_distinct_classes": true,
+        "union_matches_instance_masks": true,
+        "background_before_paste_preserved": true,
+        "background_after_harmonizer_preserved": true,
+        "sizes_within_class_ranges": true
+      },
+      "forward_seconds": 0.14815356300096028,
+      "foreground_mean_absolute_change": 9.428043869283542
+    },
+    {
+      "shape": [
+        640,
+        640,
+        3
+      ],
+      "count": 5,
+      "requested_sizes": {
+        "5": 127.0,
+        "4": 104.0,
+        "2": 73.0,
+        "3": 94.0,
+        "1": 63.0
+      },
+      "checks": {
+        "five_distinct_classes": true,
+        "union_matches_instance_masks": true,
+        "background_before_paste_preserved": true,
+        "background_after_harmonizer_preserved": true,
+        "sizes_within_class_ranges": true
+      },
+      "forward_seconds": 0.11794645202462561,
+      "foreground_mean_absolute_change": 11.138692810457517
+    }
+  ],
+  "network": "IPv4 and IPv6 sockets denied by run.py seccomp wrapper",
+  "limitations": "Synthetic development assets only. No GPU run, user aerial quality evaluation, or detector AP measurement."
+}

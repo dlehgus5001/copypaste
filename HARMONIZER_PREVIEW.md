@@ -1,6 +1,75 @@
 # 배경·객체 합성과 Harmonizer 전후 비교
 
-학습과 별도로 배경 한 장·객체 한 장·객체 마스크를 지정해 붙여넣고, Harmonizer 색·조명 보정 전후를 비교한다. COCO JSON·검증 데이터·클래스 매핑은 필요하지 않다. 학습 설정이나 학습 코드를 바꾸지 않는다.
+학습과 별도로 객체·마스크를 배경에 붙이고 Harmonizer 색·조명 보정 전후를 비교한다. **여러 객체를 한 번에 붙이고 마스크까지 자동 생성하려면 아래 `paste-multi`를 사용한다.** 한 쌍을 직접 지정하려면 `paste-check`를 사용한다. 두 명령 모두 COCO JSON·검증 데이터가 필요 없다.
+
+## 객체 5개 + 마스크 5개 + 배경 → 합성·마스크·보정 한 번에
+
+다음처럼 객체와 마스크를 같은 하위 경로·파일 이름으로 준비한다. 클래스 폴더마다 한 장만 있어도 되고 여러 후보를 넣어도 된다. 마스크는 객체 이미지와 같은 해상도의 단일 채널 이진 PNG로, 객체가 흰색(255), 배경이 검정(0)이다.
+
+```text
+data/assets/
+├─ object/
+│  ├─ object_1/001.png
+│  ├─ object_2/001.png
+│  ├─ object_3/001.png
+│  ├─ object_4/001.png
+│  └─ object_5/001.png
+├─ mask/
+│  ├─ object_1/001.png
+│  ├─ object_2/001.png
+│  ├─ object_3/001.png
+│  ├─ object_4/001.png
+│  └─ object_5/001.png
+└─ background/1.png
+```
+
+아래 모델 준비를 마친 뒤 실행한다.
+
+```bash
+python run.py paste-multi \
+  --config configs/paste_multi.json \
+  --count 10 \
+  --output outputs/paste_multi_v1
+```
+
+`--count 10`은 합성 이미지 10장을 뜻한다. 기본 설정은 배경 폴더에서 한 장을 무작위로 선택하고 640×640 패치를 무작위로 자른 뒤, **클래스 1~5를 각 한 번씩** 무작위 위치에 붙인다. 클래스 안의 원본 파일도 무작위로 선택한다. 객체 이미지와 마스크에 같은 크기·위치 변환을 적용하므로 합성 후 마스크를 따로 그릴 필요가 없다. Harmonizer는 시작 시 한 번 로드해 각 합성 이미지와 전체 객체 합집합 마스크를 처리한다.
+
+크기는 `configs/paste_multi.json`의 `copy_paste.object_long_side_range_by_category`에서 바꾼다. 아래 숫자는 **최종 합성 캔버스에서 객체 foreground의 긴 변 픽셀 범위**다. 매 객체마다 해당 범위의 정수를 무작위로 고른다. 객체 비율은 유지하며 기본 회전은 0도다.
+
+```json
+"object_long_side_range_by_category": {
+  "1": [48, 64],
+  "2": [56, 80],
+  "3": [64, 96],
+  "4": [80, 112],
+  "5": [96, 128]
+}
+```
+
+모든 클래스에 같은 범위를 적용하고 싶으면 `--object-size-range 48 96`을 추가한다. 이 CLI 옵션은 클래스별 범위를 덮어쓴다. 고정 크기는 `--object-size 64`다. 클래스별 크기를 사용하려면 이 두 옵션을 생략한다.
+
+배경을 특정 파일로 고정하려면 `--background /path/background.png`를 추가한다. 해당 이미지 안에서 자르는 패치 위치는 여전히 무작위다. 경로 루트는 config의 `copy_paste.asset_root` 또는 `--asset-root /path/assets`로 바꾼다. 새 실행에서 다른 조합을 원하면 config의 `seed`를 바꾼다. 같은 seed·입력·설정은 같은 합성을 재현한다.
+
+```text
+outputs/paste_multi_v1/
+├─ manifest.json
+├─ sample_0000/
+│  ├─ background.png      # 객체를 붙이기 전 배경 패치
+│  ├─ before.png          # 객체 5개 기본 합성
+│  ├─ mask.png            # 합성 좌표의 전체 객체 마스크: 흰색=객체, 검정=배경
+│  ├─ masks/
+│  │  ├─ object_001.png   # 개별 객체 마스크, 합성과 같은 전체 캔버스 크기
+│  │  └─ ...             # 기본 5장. 클래스 ID는 result.json에서 확인
+│  ├─ after.png           # Harmonizer 보정
+│  ├─ comparison.png      # 왼쪽 before / 오른쪽 after
+│  ├─ boxes.png           # 객체 정답 박스·클래스 ID
+│  └─ result.json         # 원본 경로·크기·위치·박스·마스크 연결·보정값
+└─ sample_0001/...
+```
+
+Harmonizer에 전달할 입력은 `before.png`와 `mask.png`다. 이 명령에서는 전달과 `after.png` 저장까지 자동으로 처리한다. 위치·윤곽을 유지하고 마스크 내부 색·조명을 보정하며, 배경 픽셀은 유지한다. 합집합 마스크의 모든 객체에 한 세트의 보정값을 사용한다. 기본 설정은 5개 모두 완전히 보이도록 배치하며, 크기가 너무 커 배치할 수 없으면 오류로 알린다.
+
+합성·마스크 생성만 먼저 보려면 `--plain-only`를 추가한다. 모델·kornia 없이 실행하며 `after.png`와 `comparison.png`는 만들지 않는다. `boxes.png`는 예측 결과가 아닌 붙인 객체의 정답 박스다. 결과 JSON은 검사 기록이며 COCO annotation 파일을 따로 요구하거나 생성하지 않는다. 학습에는 자동으로 적용하지 않는다. 재실행은 기존 결과 보호를 위해 새 `--output` 폴더를 지정한다.
 
 ## 1. 모델·추가 패키지 준비
 

@@ -1,5 +1,13 @@
 # 실제 실행 테스트 결과
 
+## 2026-11-05 다중 객체 합성·전체 마스크·Harmonizer 자동 연결
+
+`python run.py paste-multi --config configs/paste_multi.json`을 추가했다. 객체·마스크 폴더와 배경을 읽어 랜덤 패치에 합성하고, 최종 합성 좌표의 개별 마스크와 합집합 마스크를 생성한다. 합성 이미지와 합집합 마스크를 실제 Harmonizer에 전달해 전후·비교·정답 박스·배치 metadata까지 저장한다. COCO annotation이나 탐지 모델 checkpoint는 필요 없다. 기본 config는 클래스 1~5를 각 한 번씩 배치하며 클래스별 크기 범위, 공통 CLI 크기 override, 고정 배경 파일, 모델 없는 plain-only를 지원한다. 모델은 여러 합성 이미지에 한 번만 로드한다. 기존 학습 모드는 변경하지 않았다.
+
+네트워크 차단 아래 새 기능과 기존 단일 객체 도구 관련 테스트 **25 passed, 0 failed, 0 skipped**, 20.20초다([`reports/pytest-paste-multi.xml`](reports/pytest-paste-multi.xml)). 5개 클래스 배치·범위 내 랜덤 크기·마스크 합집합 및 정답 박스 정합·배경 보존·원본 파일 불변·seed 재현·프레임별 랜덤 변화·출력 보호·COCO 없는 실행·CLI 전역 크기와 객체 수 override·단일 배경 파일·빈 마스크의 모델 생략을 검사했다. 실제 공식 로컬 checkpoint로 CLI를 실행하고 두 합성에 모델을 한 번만 로드하는 것도 확인했다. 기존 단일 객체 테스트 16개가 포함된다.
+
+별도로 기본 640×640 설정과 개발용 샘플 자산으로 실제 공개 CLI를 실행했다. 두 합성 각각에 클래스 5개가 포함되고 크기 범위, 개별 마스크 합집합, 붙이기 전후와 Harmonizer 전후의 배경 픽셀 보존을 확인했다. CPU 모델 로딩 약 0.375초, forward 각각 약 0.148초·0.118초였으며 상세는 [`reports/harmonizer-multi-runtime.json`](reports/harmonizer-multi-runtime.json)에 있다. 특정 CPU·개발용 도형 샘플의 측정이며 GPU 속도나 실제 항공영상 품질·AP 개선을 검증한 결과는 아니다. pip check와 공식 YOLOX 원본 170개 파일 hash 검사도 통과했다.
+
 ## 2026-11-05 별도 합성과 실제 Harmonizer 전후 비교
 
 `python run.py paste-check`를 추가했다. COCO·학습 config 없이 배경·객체·이진 마스크를 지정해 합성하고, 로컬 Harmonizer로 색·조명을 보정하여 before/after/comparison·정답 박스·mask/alpha·metadata를 저장한다. 중앙 640 패치 또는 원본 배경 크기를 사용할 수 있고 크기·회전·위치·안쪽 feather·보정 강도를 설정한다. 부분 배치는 명시적으로 허용해야 하며, 원본과 기존 출력은 덮어쓰지 않는다. plain-only는 모델 없이 기본 합성만 저장하고 가짜 after 결과를 만들지 않는다. 보정 후 마스크 밖 배경 픽셀과 마스크 좌표·박스를 유지한다.

@@ -21,6 +21,7 @@ COMMANDS = {
     "predict": ["-m", "offline_yolox.predict"],
     "adapt-objects": ["-m", "offline_yolox.qwen_edit"],
     "paste-check": ["-m", "offline_yolox.paste_check"],
+    "paste-multi": ["-m", "offline_yolox.paste_multi"],
     "validate-gpu": ["scripts/validate_gpu.py"],
 }
 
