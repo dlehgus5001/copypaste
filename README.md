@@ -107,6 +107,22 @@ python run.py train --mode online --config configs/online_folders.json --device 
 
 `configs/online_folders.json`에서 `max_epoch`, `batch_size`, `copy_paste.epoch_length`를 바꾸면 학습 횟수와 배치 크기, EPOCH당 이미지 분량을 조절합니다. 이 파일은 작은 샘플 모델·입력 크기와 `data/sample`의 검증 데이터를 사용하므로, 실제 학습에서는 `data_dir`·`num_classes`·모델 설정도 맞추세요. 검증 클래스가 하나라면 위 5개 폴더의 객체는 모두 같은 클래스입니다. 5개 객체는 전체 파일 목록에서 랜덤으로 선택하며, 폴더마다 하나씩 선택하는 규칙은 아닙니다. 폴더별 클래스 지정과 경로 변경은 [configs/ONLINE_DATA.md](configs/ONLINE_DATA.md)를 참고하세요.
 
+## Harmonizer 적용 여부를 나눠 합성 학습하기
+
+같은 합성 조건으로 비교할 수 있는 설정을 추가했습니다. 기존 `online`·`online_patch`는 그대로 사용할 수 있습니다.
+
+```bash
+# Harmonizer 없이 패치 합성 학습
+python run.py train --mode online_patch \
+  --config configs/online_patch_baseline.json --device cuda
+
+# Harmonizer로 합성 객체를 보정한 뒤 학습
+python run.py train --mode online_patch_harmonized \
+  --config configs/online_patch_harmonized.json --device cuda
+```
+
+두 config의 `data_dir`·`val_ann`·`val_name`을 사용 중인 실제 5클래스 검증 데이터로 맞추세요. 기존 한 클래스짜리 `data/sample`은 이 설정과 맞지 않습니다. 객체/마스크/배경 폴더는 기존 구조를 사용하며, 두 버전 모두 객체 채도·대비·블러를 적용하고 보정 버전만 Harmonizer를 추가합니다. GPU 보정은 `num_workers: 0`으로 실행합니다. 검증·일반 추론에는 Harmonizer를 적용하지 않습니다. 배경 전체 합성용 비교 설정과 모델 준비·preview·크기/색/강도·checkpoint 사용법은 [HARMONIZER_TRAINING.md](HARMONIZER_TRAINING.md)를 참고하세요.
+
 ## 배경·객체를 직접 붙여 Harmonizer 전후 확인하기
 
 객체 5개와 각각의 마스크를 배경에 무작위 크기·위치로 붙이고, **합성 좌표의 전체 마스크 생성 → Harmonizer 보정**까지 한 번에 실행하려면:

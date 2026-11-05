@@ -11,6 +11,8 @@ import torch
 from .bootstrap import local_path
 from .composition_options import add_composition_arguments, composition_config
 from .experiment import create_exp, read_config, seed_everything
+from .harmonizer_options import add_harmonizer_arguments, harmonizer_config
+from .modes import MODES, HARMONIZED_MODES
 from .startup import report as startup_report, startup_stage
 
 
@@ -263,7 +265,7 @@ def build_cuda_trainer(exp, args):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mode", choices=("original", "online", "original_patch", "online_patch"),
+    parser.add_argument("--mode", choices=MODES,
                         help="Select the default configuration; an explicit --config must match this mode")
     parser.add_argument("--config", help="Local configuration (default: configs/<mode>.json, original if no mode given)")
     parser.add_argument("--device", choices=("cuda", "cpu"), default="cuda")
@@ -273,6 +275,7 @@ def main(argv=None):
     parser.add_argument("--stop-after-epoch", type=int, help="Stop at an epoch boundary, preserving configured total schedule")
     parser.add_argument("--cpu-threads", type=int, default=2)
     add_composition_arguments(parser)
+    add_harmonizer_arguments(parser)
     args = parser.parse_args(argv)
     if args.resume and args.checkpoint:
         parser.error("--resume and --checkpoint are mutually exclusive")
@@ -282,6 +285,7 @@ def main(argv=None):
         parser.error("--mode does not match the mode declared in --config")
     try:
         values = composition_config(values, args)
+        values = harmonizer_config(values, args)
     except ValueError as error:
         parser.error(str(error))
     startup_report(f"config={local_path(config)}; mode={values.get('mode', 'original')}; device={args.device}")
@@ -289,6 +293,10 @@ def main(argv=None):
         raise RuntimeError("CUDA is unavailable. GPU training requires a CUDA GPU; --device cpu explicitly runs the diagnostic harness.")
     if args.device == "cpu" and args.fp16:
         parser.error("--fp16 requires CUDA")
+    if values.get("mode") in HARMONIZED_MODES:
+        settings = values.get("harmonizer", {})
+        if isinstance(settings, dict) and settings.get("device", "auto") == "auto":
+            values = dict(values, harmonizer={**settings, "device": args.device})
     with startup_stage("Preparing experiment, COCO classes and training data"):
         exp = create_exp(values)
     seed_everything(exp.seed)

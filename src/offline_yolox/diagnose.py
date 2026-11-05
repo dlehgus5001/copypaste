@@ -161,7 +161,8 @@ def diagnose(config, output, *, checkpoint=None, device="cuda", count=8,
     validation = exp.get_eval_dataset()
     real_indices, real_metadata = select_samples(validation, count)
     training = exp.get_dataset()
-    online = values.get("mode") in ("online", "online_patch")
+    from .modes import ONLINE_MODES
+    online = values.get("mode") in ONLINE_MODES
     training_indices = (list(range(count)) if online else select_samples(training, count)[0])
     output.mkdir(parents=True, exist_ok=True)
     rows = []

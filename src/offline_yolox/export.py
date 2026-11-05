@@ -57,7 +57,7 @@ def export_coco(config: dict, output, count=100, split="train2017") -> dict:
         raise ValueError("count must be a positive integer")
     if split not in ("train2017", "val2017"):
         raise ValueError("split must be 'train2017' or 'val2017'")
-    if not isinstance(config, dict) or config.get("mode") != "online":
+    if not isinstance(config, dict) or config.get("mode") not in ("online", "online_harmonized"):
         raise ValueError("COCO export requires an online configuration")
     exp = create_exp(config)
     dataset = exp.get_dataset()

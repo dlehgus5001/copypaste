@@ -4,6 +4,7 @@ import copy
 import math
 
 from .startup import report
+from .modes import ONLINE_MODES
 
 
 def add_composition_arguments(parser):
@@ -48,7 +49,7 @@ def composition_config(config, args):
              "unique_objects", "unique_classes", "require_object_count")
     if not any(getattr(args, name, None) is not None for name in names):
         return values
-    if values.get("mode", "original") not in ("online", "online_patch"):
+    if values.get("mode", "original") not in ONLINE_MODES:
         raise ValueError("Composition options require an online configuration")
     if not isinstance(values.get("copy_paste"), dict):
         raise ValueError("Online mode requires a copy_paste configuration object")

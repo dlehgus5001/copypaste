@@ -8,6 +8,8 @@ import numpy as np
 from .bootstrap import local_path
 from .composition_options import add_composition_arguments, composition_config
 from .experiment import create_exp, read_config
+from .harmonizer_options import add_harmonizer_arguments, harmonizer_config
+from .modes import ONLINE_MODES
 
 
 def save_preview(config, output, count=4):
@@ -15,7 +17,7 @@ def save_preview(config, output, count=4):
         raise ValueError("count must be positive")
     exp = create_exp(config)
     mode = exp.config.get("mode")
-    if mode not in ("online", "online_patch", "original_patch"):
+    if mode not in (*ONLINE_MODES, "original_patch"):
         raise ValueError("Preview requires an online or original_patch configuration")
     dataset = exp.get_dataset()
     if mode == "original_patch":
@@ -70,9 +72,11 @@ def main(argv=None):
     parser.add_argument("--output", default="outputs/preview")
     parser.add_argument("--count", type=int, default=4)
     add_composition_arguments(parser)
+    add_harmonizer_arguments(parser)
     args = parser.parse_args(argv)
     try:
         config = composition_config(read_config(args.config), args)
+        config = harmonizer_config(config, args)
     except ValueError as error:
         parser.error(str(error))
     result = save_preview(config, args.output, args.count)

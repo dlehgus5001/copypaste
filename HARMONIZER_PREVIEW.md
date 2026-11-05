@@ -2,6 +2,8 @@
 
 학습과 별도로 객체·마스크를 배경에 붙이고 Harmonizer 색·조명 보정 전후를 비교한다. **여러 객체를 한 번에 붙이고 마스크까지 자동 생성하려면 아래 `paste-multi`를 사용한다.** 한 쌍을 직접 지정하려면 `paste-check`를 사용한다. 두 명령 모두 COCO JSON·검증 데이터가 필요 없다.
 
+합성 결과를 확인하는 별도 명령이며, 학습 중 매번 Harmonizer를 적용하려면 [HARMONIZER_TRAINING.md](HARMONIZER_TRAINING.md)의 `online_harmonized`·`online_patch_harmonized` 모드를 사용한다. 기존 `online`·`online_patch`는 자동 보정하지 않는다.
+
 ## 객체 5개 + 마스크 5개 + 배경 → 합성·마스크·보정 한 번에
 
 다음처럼 객체와 마스크를 같은 하위 경로·파일 이름으로 준비한다. 클래스 폴더마다 한 장만 있어도 되고 여러 후보를 넣어도 된다. 마스크는 객체 이미지와 같은 해상도의 단일 채널 이진 PNG로, 객체가 흰색(255), 배경이 검정(0)이다.

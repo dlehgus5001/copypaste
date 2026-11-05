@@ -1,5 +1,15 @@
 # 실제 실행 테스트 결과
 
+## 2026-11-05 Harmonizer 적용/미적용 YOLOX 합성 학습
+
+기존 `online`·`online_patch`를 유지하고 `online_harmonized`·`online_patch_harmonized`를 추가했다. 합성의 최종 가시 마스크 합집합으로 객체만 보정하고, 기존 TrainTransform 직전에 YOLOX에 넘긴다. Harmonizer는 FP32·eval·inference mode·고정 가중치로 사용하며 detector optimizer/EMA에 포함하지 않는다. 모델 생성의 Python/NumPy/Torch CPU RNG 영향을 격리하고 EPOCH별 데이터셋이 같은 lazy runtime을 공유해 재로딩을 피한다. CUDA/auto는 num_workers=0을 요구하며 명시적 CPU 보정은 Worker별 lazy loading을 지원한다. 실제 검증과 일반 추론에는 보정을 적용하지 않는다.
+
+동일 조건 비교용 `online_baseline.json`/`online_harmonized.json`, `online_patch_baseline.json`/`online_patch_harmonized.json`을 만들었다. 각 쌍은 mode·결과 경로·harmonizer 설정 외에는 같음을 확인했다. 5클래스 중복 방지·클래스별 크기·채도 0.2~0.5·대비 0.9~1.0·객체 블러 0.4~1.0·EPOCH당 10,000장을 사용한다. 실제 검증 taxonomy와 경로는 사용자 데이터에 맞춰야 한다. 기존 config는 변경하지 않았다. train/preview의 별도 Harmonizer CLI 옵션, 진단 도구의 online 구분, nonpatch export 모드도 연결했다. source package에 새 안내서와 소스·config·테스트를 포함한다.
+
+Python 3.12 / Torch 2.8.0+cpu / torchvision 0.23.0+cpu / Kornia 0.8.2 / kornia-rs 0.1.14 환경에서 네트워크 차단 아래 새 관련 검사 **20 passed, 0 failed, 0 skipped**, 34.16초다([`reports/pytest-harmonized-training.xml`](reports/pytest-harmonized-training.xml)). 실제 공식 checkpoint로 두 모드의 공개 CLI 학습·preview·검증을 실행해 양의 유한 loss와 YOLOX checkpoint를 확인했다. 보정용 파일이 없는 경로로 바꿔도 detector 검증은 실행됨을 확인했다. 마스크·박스·클래스·배경 픽셀 보존, plain 모드의 모델 미사용, 지연 로딩·EPOCH 간 재사용, 모델 frozen/inference 동작, CPU Worker, CUDA Worker 차단, 빈 마스크·강도 0 생략, pickle 시 모델 제외를 검사했다. 중단/재개한 학습의 최종 loss·detector·optimizer·EMA·RNG 상태가 연속 학습과 정확히 일치했고 원본 데이터·Harmonizer 파일 hash도 유지됐다.
+
+기존 original/online/patch 학습·재개·CLI·합성·preview·COCO export·진단·추론·별도 Harmonizer 도구 회귀는 **120 passed, 0 failed**, 97.66초다([`reports/pytest-harmonized-regression.xml`](reports/pytest-harmonized-regression.xml)). CUDA 프로필이 필요한 기존 환경 검사 1개는 이 CPU 실행에서 제외했다. 전체 저장소 테스트를 실행한 결과로 주장하지 않는다. pip check와 공식 YOLOX 원본 170개 파일 hash 검증도 통과했다. GPU 학습·실제 항공영상 품질·AP 개선은 미검증이며 보정은 이미지마다 추가 연산을 사용한다. resume은 설정·경로를 확인하지만 같은 경로의 보정 가중치를 바꾼 경우의 내용 차이는 검출하지 않으므로 동일 모델 파일을 유지해야 한다.
+
 ## 2026-11-05 합성 전 객체 채도·대비 기본 설정
 
 `configs/paste_multi.json`에 기존 객체 전용 옵션 `object_saturation_range: [0.5, 0.8]`, `object_contrast_range: [0.8, 0.95]`를 추가했다. 크기 변환 후 채도·대비를 낮추고 기존 블러를 적용한 뒤 배경에 붙여 Harmonizer에 전달한다. 배경·마스크·박스와 기존 학습 config는 바꾸지 않았다. 사용 안내에 조절 범위·CLI override·원래 색 복원 방법을 기록했다.
