@@ -9,9 +9,12 @@
     "25ton-Crane"
   ],
   "input_size": [640, 640],
-  "patch": {"size": [640, 640]},
+  "patch": {
+    "size": [640, 640]
+  },
   "seed": 42,
   "copy_paste": {
+    "validate_assets_on_start": false,
     "asset_root": "data/assets",
     "objects_dir": "object",
     "masks_dir": "mask",
@@ -24,33 +27,37 @@
       "object_4": 4,
       "object_5": 5
     },
-    "validate_assets_on_start": false,
-    "epoch_length": 1000,
+    "epoch_length": 10000,
     "object_count": [5, 5],
+    "unique_objects": false,
     "unique_classes": true,
     "require_object_count": true,
     "composition_attempts": 20,
-    "placement_attempts": 50,
     "object_long_side_range": [48, 96],
     "object_long_side_range_by_category": {
-      "1": [48, 64],
-      "2": [56, 80],
-      "3": [64, 96],
-      "4": [80, 112],
-      "5": [96, 128]
+      "1": [30, 110],
+      "2": [30, 110],
+      "3": [40, 110],
+      "4": [40, 110],
+      "5": [40, 110]
     },
+    "distribution_source": "uncalibrated_diagnostic_sample_not_measured_aerial_distribution",
     "rotation_degrees": [0, 0],
     "allow_partial_objects": false,
     "min_visible_fraction": 1.0,
     "min_visible_pixels": 8,
     "min_box_side_pixels": 2,
+    "placement_attempts": 50,
+    "max_labels": 120,
     "gaussian_blend_sigma": 0.6,
     "object_saturation_range": [0.2, 0.5],
     "object_contrast_range": [0.9, 1.0],
-    "object_blur_sigma_range": [0.8, 1.6],
+    "object_blur_sigma_range": [0.4, 1.0],
     "object_resolution_scale_range": [0.25, 0.5],
-    "brightness_range": [1, 1],
+    "object_dirt_strength_range": [0.0, 0.0],
+    "object_dirt_color_bgr": [70, 100, 130],
     "blur_sigma": 0,
-    "noise_std": 0
+    "noise_std": 0,
+    "brightness_range": [1, 1]
   }
 }

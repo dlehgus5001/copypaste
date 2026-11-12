@@ -58,7 +58,7 @@ python run.py train --mode online --config configs/online.json --device cuda \
 
 객체에만 약한 블러와 흙색 얼룩을 넣으려면 `--object-blur-sigma-range 0.4 0.8 --object-dirt-strength-range 0.2 0.45`를 추가합니다. 이때 채도는 `--object-saturation-range 0.8 1.0`처럼 비교적 유지한 상태에서 확인할 수 있습니다. 두 효과의 기본값은 `[0, 0]`으로 꺼져 있습니다. 흙색과 JSON 설정은 [객체 블러와 흙이 묻은 표면](configs/ONLINE_DATA.md#객체-블러와-흙이-묻은-표면)을 참고하세요.
 
-객체 디테일을 더 줄이려면 `--object-resolution-scale-range 0.25 0.5 --object-blur-sigma-range 0.8 1.6`을 사용합니다. 최종 긴 변 80픽셀 객체를 내부적으로 약 20~40픽셀로 줄였다가 복원하며 마스크·정답 박스·최종 크기는 유지합니다. `copy_paste.object_resolution_scale_range`로 저장할 수 있고, 생략 또는 `[1, 1]`이면 해상도 저하는 꺼집니다. 새 네 비교 config와 `paste_multi.json`은 해상도 `[0.25, 0.5]`·블러 `[0.8, 1.6]`을 사용하며 기존 학습 config는 유지합니다. 자세한 범위·미리보기 명령은 [HARMONIZER_TRAINING.md](HARMONIZER_TRAINING.md)를 참고하세요.
+객체 디테일을 더 줄이려면 `--object-resolution-scale-range 0.25 0.5 --object-blur-sigma-range 0.8 1.6`을 사용합니다. 최종 긴 변 80픽셀 객체를 내부적으로 약 20~40픽셀로 줄였다가 복원하며 마스크·정답 박스·최종 크기는 유지합니다. `copy_paste.object_resolution_scale_range`로 저장할 수 있고, 생략 또는 `[1, 1]`이면 해상도 저하는 꺼집니다. 현재 네 비교 config는 해상도 `[0.25, 0.5]`를 유지하고, 블러는 일반 online 쌍 `[0.8, 0.8]`, patch 쌍과 `paste_multi.json` `[0.4, 1.0]`을 사용합니다. 위 `[0.8, 1.6]` 명령은 더 강한 블러를 시험하는 예시입니다. 기존 `online.json`·`online_patch.json`은 유지합니다. 자세한 범위·미리보기 명령은 [HARMONIZER_TRAINING.md](HARMONIZER_TRAINING.md)를 참고하세요.
 
 기본적으로 같은 객체·마스크 세트를 여러 번 선택할 수 있습니다. 이미지 안에서 서로 다른 세트만 선택하려면 `--unique-objects`를 추가하고 객체 세트를 5개 이상 준비하세요. 객체를 5개 배치할 수 없으면 재시도 후 오류로 알립니다. `preview`와 `export`는 합성 결과를 파일로 확인하거나 반출할 때만 직접 실행하는 선택 도구이며 학습에서 자동 호출하지 않습니다.
 
@@ -123,7 +123,7 @@ python run.py train --mode online_patch_harmonized \
   --config configs/online_patch_harmonized.json --device cuda
 ```
 
-두 config의 `data_dir`·`val_ann`·`val_name`을 사용 중인 실제 5클래스 검증 데이터로 맞추세요. 기존 한 클래스짜리 `data/sample`은 이 설정과 맞지 않습니다. 객체/마스크/배경 폴더는 기존 구조를 사용하며, 두 버전 모두 객체 채도·대비·블러를 적용하고 보정 버전만 Harmonizer를 추가합니다. GPU 보정은 `num_workers: 0`으로 실행합니다. 검증·일반 추론에는 Harmonizer를 적용하지 않습니다. 배경 전체 합성용 비교 설정과 모델 준비·preview·크기/색/강도·checkpoint 사용법은 [HARMONIZER_TRAINING.md](HARMONIZER_TRAINING.md)를 참고하세요.
+네 비교 config는 모두 `data_dir: data/assets`, 사용자가 지정한 가평교장 `val.json`과 `레이블링완료데이터` 이미지 루트를 사용합니다. `val_ann`·`val_name`은 절대 경로로 직접 읽으며, 다른 서버에서는 실제 경로로 바꾸세요. 일반 online 쌍은 batch 2·2 EPOCH, patch 쌍은 batch 64·50 EPOCH이며, 각 baseline/harmonized 쌍의 조건은 같습니다. 객체/마스크/배경 폴더는 기존 구조를 사용하며, 두 버전 모두 객체 채도·대비·블러를 적용하고 보정 버전만 Harmonizer를 추가합니다. GPU 보정은 `num_workers: 0`으로 실행합니다. 검증·일반 추론에는 Harmonizer를 적용하지 않습니다. 배경 전체 합성용 비교 설정과 모델 준비·preview·크기/색/강도·checkpoint 사용법은 [HARMONIZER_TRAINING.md](HARMONIZER_TRAINING.md)를 참고하세요.
 
 ## 배경·객체를 직접 붙여 Harmonizer 전후 확인하기
 

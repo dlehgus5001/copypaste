@@ -222,7 +222,7 @@ python run.py preview \
   --output outputs/preview_train_degraded_v1
 ```
 
-같은 두 객체 효과 옵션은 `train`·`paste-multi`·`export`에도 사용할 수 있다. CLI는 해당 실행의 JSON을 덮어쓰며, 학습에 지속 적용하려면 실제 학습 JSON에 저장한다. 추가 패키지는 없다. 실행 중인 학습은 config를 다시 읽지 않으므로 새 실행부터 적용한다. 새 네 비교 config와 `paste_multi.json`은 위 해상도·블러 값을 사용하며, 기존 `online.json`·`online_patch.json`은 그대로다. 보정 전후를 실제 원본 패치와 비교해 조절한다.
+같은 두 객체 효과 옵션은 `train`·`paste-multi`·`export`에도 사용할 수 있다. CLI는 해당 실행의 JSON을 덮어쓰며, 학습에 지속 적용하려면 실제 학습 JSON에 저장한다. 추가 패키지는 없다. 실행 중인 학습은 config를 다시 읽지 않으므로 새 실행부터 적용한다. 현재 네 비교 config는 해상도 `[0.25, 0.5]`를 사용하고, 블러는 일반 online 쌍 `[0.8, 0.8]`, patch 쌍과 `paste_multi.json` `[0.4, 1.0]`이다. 위 `[0.8, 1.6]` 예시는 더 강한 블러를 CLI로 시험하는 설정이며 학습 JSON을 덮어쓴다. 기존 `online.json`·`online_patch.json`은 그대로다. 보정 전후를 실제 원본 패치와 비교해 조절한다.
 
 학습 Dataset은 합성 이미지·Mask를 메모리에서 바로 YOLOX로 전달하고 파일을 쓰지 않는다. `train`, `preview`, `export`에서 객체 수·크기를 명령 옵션으로 바꾸면 해당 실행에만 적용한다. 원래 JSON 파일은 수정하지 않는다. `--object-size`와 `--object-size-range`는 함께 지정하지 않는다.
 

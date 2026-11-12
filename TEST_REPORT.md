@@ -1,5 +1,11 @@
 # 실제 실행 테스트 결과
 
+## 2026-11-12 사용자 폐쇄망 설정 동기화
+
+사용자가 제공한 프로필에 맞춰 online_harmonized/online_baseline은 batch 2·2 EPOCH·채도 [0.3,0.5]·대비 [0.8,0.95]·블러 [0.8,0.8]로, online_patch_harmonized/online_patch_baseline은 batch 64·50 EPOCH·클래스 1/2 크기 [30,110]·3/4/5 크기 [40,110]·채도 [0.2,0.5]·대비 [0.9,1.0]·블러 [0.4,1.0]로 맞췄다. 사용자 추가 응답에 따라 네 학습 config 모두 data_dir=data/assets 및 제공된 실제 가평교장 검증 JSON·레이블링 이미지 절대 경로를 사용한다. 최신 해상도 저하 [0.25,0.5]는 유지했다. paste_multi.copy_paste는 patch 학습 설정을 그대로 복사해 합성 조건을 일치시켰다. 기존 샘플용 online.json/online_patch.json과 원본 학습 설정은 변경하지 않았다.
+
+config만 바꾸는 작업으로 새 테스트 파일은 추가하지 않았다. 네트워크 차단 아래 JSON 13개 해석, baseline/harmonized 쌍의 조건 일치, 절대 경로 결합, Harmonizer 설정/Worker 조건, standalone과 patch 합성 설정 일치를 확인했다. 개발용 임시 5클래스 자산으로 변경한 config마다 2장씩 총 10장을 합성해 크기·색·블러·해상도 범위와 5개 클래스·mask/box 정합을 검사했다. 결과는 [`reports/user-config-profiles.json`](reports/user-config-profiles.json)에 있다. 폐쇄망 실제 파일은 이 환경에서 접근할 수 없어 실제 데이터 가독성·GPU 학습·AP는 검사하지 않았다.
+
 ## 2026-11-12 객체 디테일 저하: 축소·복원과 강화된 블러
 
 `copy_paste.object_resolution_scale_range`와 공통 CLI `--object-resolution-scale-range MIN MAX`를 추가했다. 객체 크기·회전 및 색 보정 후 내부 해상도를 낮췄다가 최종 크기로 복원하고 기존 객체 블러를 적용한다. 색상과 mask 가중치를 함께 AREA 축소·LINEAR 복원해 검은 외부 픽셀이 섞이지 않도록 한다. 희박한 mask의 복원 가중치가 없으면 원래 픽셀을 유지한다. 배경·최종 크기·이진 mask·정답 box·클래스는 유지한다. 비율 범위는 0 < MIN <= MAX <= 1이며 미지정/[1,1]은 기존 픽셀·metadata·난수 흐름을 유지한다. 새 해상도 선택 난수는 기존 blur/dirt와 분리했다.

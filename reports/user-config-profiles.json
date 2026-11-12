@@ -1,0 +1,34 @@
+{
+  "json_configs_parsed": 13,
+  "matched_baseline_pairs": true,
+  "shared_real_validation_paths": true,
+  "standalone_matches_patch_composition": true,
+  "sample_checks": {
+    "online_baseline": {
+      "samples_checked": 2,
+      "objects_per_sample": 5,
+      "sample_geometry_and_appearance_ranges_valid": true
+    },
+    "online_harmonized": {
+      "samples_checked": 2,
+      "objects_per_sample": 5,
+      "sample_geometry_and_appearance_ranges_valid": true
+    },
+    "online_patch_baseline": {
+      "samples_checked": 2,
+      "objects_per_sample": 5,
+      "sample_geometry_and_appearance_ranges_valid": true
+    },
+    "online_patch_harmonized": {
+      "samples_checked": 2,
+      "objects_per_sample": 5,
+      "sample_geometry_and_appearance_ranges_valid": true
+    },
+    "paste_multi": {
+      "samples_checked": 2,
+      "objects_per_sample": 5,
+      "sample_geometry_and_appearance_ranges_valid": true
+    }
+  },
+  "limitations": "Closed-network validation files unavailable here; no real-data GPU training or AP evaluation performed. Synthetic assets used only for sampler setting checks."
+}
