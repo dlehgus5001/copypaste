@@ -1,0 +1,34 @@
+{
+  "configs": {
+    "online": {
+      "augmentation_fields_unchanged": true,
+      "training_fields_unchanged": true,
+      "added_input_fields": [
+        "backgrounds_dir",
+        "folder_categories",
+        "mask_suffix",
+        "masks_dir",
+        "objects_dir"
+      ],
+      "class_count": 5,
+      "sample_composition_checked": true
+    },
+    "online_patch": {
+      "augmentation_fields_unchanged": true,
+      "training_fields_unchanged": true,
+      "added_input_fields": [],
+      "class_count": 5,
+      "sample_composition_checked": true
+    },
+    "online_folders": {
+      "augmentation_fields_unchanged": true,
+      "training_fields_unchanged": true,
+      "added_input_fields": [
+        "folder_categories"
+      ],
+      "class_count": 5,
+      "sample_composition_checked": true
+    }
+  },
+  "limitation": "Only data fields changed. Synthetic asset checks; actual closed-network data inaccessible."
+}

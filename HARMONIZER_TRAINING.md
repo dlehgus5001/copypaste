@@ -95,7 +95,7 @@ python run.py train \
 | `object_blur_sigma_range` | `[0.8, 0.8]` | `[0.4, 1.0]` |
 | 클래스별 긴 변 범위(픽셀) | 1:48~64, 2:56~80, 3:64~96, 4:80~112, 5:96~128 | 1·2:30~110, 3·4·5:40~110 |
 
-공통으로 nano·640×640·객체 5개·클래스 중복 방지·`eval_interval: 1`·`num_workers: 0`을 사용한다. 기존 `online.json`·`online_patch.json`과 original 설정은 변경하지 않았다.
+공통으로 nano·640×640·객체 5개·클래스 중복 방지·`eval_interval: 1`·`num_workers: 0`을 사용한다. 기존 `online.json`·`online_patch.json`·`online_folders.json`도 실제 데이터 경로·클래스·폴더 입력에 맞췄지만 각 파일의 기존 증강은 유지한다. 원래 없던 객체 블러·채도·해상도 옵션을 이 기존 파일들에 추가하지 않는다. 설치 확인용 기존 샘플 프로필은 `configs/samples/`에 보관한다.
 
 | 입력 방식 | 보정 없는 config / mode | 보정하는 config / mode |
 | --- | --- | --- |

@@ -38,7 +38,7 @@ def config(tmp_path):
     for entry, category_id in zip(entries, [1, 1, 3, 7, 29, 51], strict=True):
         entry["category_id"] = category_id
     manifest.write_text(json.dumps(entries))
-    values = json.loads((ROOT / "configs/online.json").read_text())
+    values = json.loads((ROOT / "configs/samples/online.json").read_text())
     values.update(mode="online_patch", num_classes=5, data_dir=str(data),
                   input_size=[64, 64], test_size=[64, 64], max_epoch=1,
                   scheduler="cos", batch_size=2, hsv_prob=0, flip_prob=0,

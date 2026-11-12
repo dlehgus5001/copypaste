@@ -78,7 +78,7 @@ def test_python_cli_runs_both_workflows_from_another_directory(invoke, tmp_path)
     assert manifest["splits"]["val2017"]["images"] == 1
 
     for mode in ("original", "online"):
-        config = json.loads((ROOT / "configs" / f"{mode}.json").read_text())
+        config = json.loads((ROOT / "configs" / "samples" / f"{mode}.json").read_text())
         config.update(
             data_dir=str(data),
             output_dir=str(tmp_path / mode),

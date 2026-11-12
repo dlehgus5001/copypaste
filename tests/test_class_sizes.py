@@ -38,7 +38,7 @@ def config(tmp_path):
     for index, entry in enumerate(entries):
         entry["category_id"] = categories[index % 2]["id"]
     path.write_text(json.dumps(entries))
-    values = json.loads((ROOT / "configs/online.json").read_text())
+    values = json.loads((ROOT / "configs/samples/online.json").read_text())
     values.update(mode="online_patch", data_dir=str(data), num_classes=2,
                   input_size=[128, 128], test_size=[128, 128], patch={"size": [64, 64]},
                   max_epoch=1, scheduler="cos", hsv_prob=0, flip_prob=0,

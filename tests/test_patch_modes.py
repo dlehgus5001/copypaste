@@ -28,7 +28,7 @@ def config(tmp_path):
     torch.set_num_threads(2)
     data = tmp_path / "큰 이미지"
     make_sample_data(data, image_size=128, train_images=2, val_images=1)
-    source = json.loads((ROOT / "configs/online.json").read_text())
+    source = json.loads((ROOT / "configs/samples/online.json").read_text())
     source.update(mode="original_patch", data_dir=str(data), input_size=[64, 64],
                   test_size=[64, 64], max_epoch=1, scheduler="cos", batch_size=2,
                   hsv_prob=0.0, flip_prob=0.0, output_dir=str(tmp_path / "outputs"),

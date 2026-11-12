@@ -73,7 +73,7 @@ def test_public_diagnostic_cli_loads_checkpoint_and_saves_real_synthetic_predict
     torch.set_num_threads(2)
     data = tmp_path / "data"
     make_sample_data(data, train_images=2, val_images=1)
-    config = json.loads((ROOT / "configs/online.json").read_text())
+    config = json.loads((ROOT / "configs/samples/online.json").read_text())
     config.update(mode="online_patch", data_dir=str(data), input_size=[64, 64], test_size=[64, 64],
                   patch={"size": [64, 64]}, output_dir=str(tmp_path / "weights"), exp_name="test")
     config["copy_paste"].update(asset_root=str(data), validate_assets_on_start=False, epoch_length=8,

@@ -1,8 +1,8 @@
 # Online Copy-Paste 로컬 데이터 설정
 
-`configs/online.json`은 기능 확인용 작은 샘플 설정이다. 샘플 객체는 직접 생성한 도형이며 SAM3 출력이나 실제 항공 영상이 아니다. SAM3 추론은 학습 중 실행하지 않는다. 실제 서버에서는 사전에 추출한 객체 이미지·마스크와 객체가 없는 항공뷰 배경을 로컬로 제공한다.
+`configs/online.json`·`online_folders.json`·`online_patch.json`은 실제 폐쇄망의 5클래스 검증 경로와 object/mask/background 폴더 입력을 사용한다. 이번 동기화는 데이터 경로·클래스 수·폴더 매핑만 바꾸며, 기존에 없던 객체 블러·채도·해상도 효과를 추가하지 않는다. 각 파일의 기존 증강 값은 유지한다. 설치 확인용 원래 설정은 `configs/samples/`에 보관한다. `configs/samples/online.json`의 도형 샘플은 SAM3 출력이나 실제 항공 영상이 아니다. SAM3 추론은 학습 중 실행하지 않으며 실제 서버에서는 사전에 추출한 객체·마스크와 객체가 없는 항공뷰 배경을 로컬로 제공한다.
 
-`data_dir`에는 평가용 COCO 데이터의 `annotations/<val_ann>`과 `<val_name>` 이미지가 필요하다. Online 모드는 Original 모드의 COCO 학습 Annotation이나 학습 이미지를 요구하지 않는다. `num_classes`는 검증 COCO의 클래스 개수와 일치해야 한다. 객체의 클래스 ID는 그 COCO taxonomy의 ID다. 비연속 ID도 오름차순으로 정렬해 모델의 0부터 시작하는 클래스 인덱스로 변환한다.
+`data_dir`에는 평가용 COCO 데이터의 `annotations/<val_ann>`과 `<val_name>` 이미지를 둘 수 있다. `val_ann`·`val_name`이 절대 경로면 해당 위치를 직접 읽으며, `data_dir` 자체도 존재해야 한다. 현재 실제 데이터 설정은 `data_dir: data/assets`와 사용자가 지정한 가평교장 val.json·레이블링완료데이터 이미지 절대 경로를 사용한다. Online 모드는 Original 모드의 COCO 학습 Annotation이나 학습 이미지를 요구하지 않는다. `num_classes`는 검증 COCO의 클래스 개수와 일치해야 한다. 객체의 클래스 ID는 그 COCO taxonomy의 ID다. 비연속 ID도 오름차순으로 정렬해 모델의 0부터 시작하는 클래스 인덱스로 변환한다.
 
 ## 폴더에서 자동으로 읽기
 
@@ -11,17 +11,17 @@
 ```text
 data/assets/
   object/
-    type1/001.png
-    type2/001.png
-    type3/001.png
-    type4/001.png
-    type5/001.png
+    object_1/001.png
+    object_2/001.png
+    object_3/001.png
+    object_4/001.png
+    object_5/001.png
   mask/
-    type1/001.png
-    type2/001.png
-    type3/001.png
-    type4/001.png
-    type5/001.png
+    object_1/001.png
+    object_2/001.png
+    object_3/001.png
+    object_4/001.png
+    object_5/001.png
   background/
     bg_001.png
     bg_002.png
@@ -49,7 +49,7 @@ python run.py train --mode online --config configs/online_folders.json --device 
 
 이 명령은 매 이미지에 객체 5개를 합성하며 합성 이미지와 학습용 COCO JSON을 저장하지 않는다. 모델 checkpoint와 학습 로그는 저장한다. 전체 객체·마스크 목록에서 랜덤 선택하므로 **5개 폴더에서 하나씩 선택한다는 뜻은 아니다.** 같은 세트의 중복 선택을 막으려면 `--unique-objects`를 추가하고 세트를 5개 이상 준비한다.
 
-이 예제는 샘플과 같은 작은 모델·128×128 입력·2 EPOCH 설정이다. 총 학습 횟수는 `max_epoch`, 배치 크기는 `batch_size`, EPOCH당 생성 분량은 `copy_paste.epoch_length`에서 바꾼다. 실제 학습 시 `data_dir`, `num_classes`, 입력 크기와 모델 크기도 맞춘다. 예제의 `data_dir: "data/sample"`은 이미 생성한 샘플 검증 데이터를 참조하므로, 해당 데이터가 없으면 실제 검증 데이터 경로를 지정하거나 `python run.py sample-data`로 샘플을 먼저 준비한다.
+이 설정은 작은 모델·128×128 입력·2 EPOCH 등 기존 학습 조건을 유지하고, 검증 경로와 `num_classes: 5`를 실제 데이터에 맞췄다. 총 학습 횟수는 `max_epoch`, 배치 크기는 `batch_size`, EPOCH당 생성 분량은 `copy_paste.epoch_length`에서 바꾼다. 현재 `folder_categories`는 `object_1`~`object_5`를 category ID 1~5로 연결한다. 도형 샘플 점검에는 `python run.py sample-data` 실행 후 `configs/samples/online.json`을 지정한다.
 
 폴더 경로는 실행 옵션으로도 바꿀 수 있다. 원래 JSON 파일은 수정하지 않는다.
 
@@ -61,7 +61,7 @@ python run.py train --mode online --config configs/online_folders.json --device 
 
 기본 마스크 이름은 객체와 같으며, `001.png`에 대응하는 마스크가 `001_mask.png`라면 JSON에 `"mask_suffix": "_mask"`를 추가하거나 `--mask-suffix _mask`를 지정한다.
 
-검증 클래스가 하나면 폴더 이름과 관계없이 모든 객체에 그 클래스 ID를 지정한다. 따라서 위의 `type1`~`type5`는 5개 클래스를 의미하지 않는다. 클래스가 여러 개면 객체 폴더 바로 아래의 첫 하위 폴더 이름을 검증 COCO의 클래스 이름 또는 category ID로 지정한다. 예를 들어 검증 클래스가 `car`(ID 7), `truck`(ID 29)이면 `object/car/001.png`와 `object/truck/001.png`를 사용하고 마스크 폴더도 같은 구조로 만든다. 기존 폴더 이름을 유지하려면 `copy_paste`에 매핑을 추가할 수 있다.
+현재 실제 설정은 `object_1`~`object_5`에 명시적인 5클래스 매핑을 사용한다. 다른 단일 클래스 설정에서는 폴더 이름과 관계없이 모든 객체에 해당 클래스 ID를 지정한다. 클래스가 여러 개면 객체 폴더 바로 아래의 첫 하위 폴더 이름을 검증 COCO의 클래스 이름 또는 category ID로 지정한다. 예를 들어 검증 클래스가 `car`(ID 7), `truck`(ID 29)이면 `object/car/001.png`와 `object/truck/001.png`를 사용하고 마스크 폴더도 같은 구조로 만든다. 기존 폴더 이름을 유지하려면 `copy_paste`에 매핑을 추가할 수 있다.
 
 ```json
 "folder_categories": {"type1": 7, "type2": 29}
@@ -71,7 +71,7 @@ python run.py train --mode online --config configs/online_folders.json --device 
 
 ## 기존 Manifest 입력 사용하기 — 선택 사항
 
-기존 `configs/online.json`은 샘플 Manifest를 읽는 방식으로 유지한다. 객체·마스크 폴더 입력을 지정하면 객체 Manifest보다 우선하고, 배경 폴더 입력을 지정하면 배경 Manifest보다 우선한다. 객체 폴더 방식에서는 `objects_dir`와 `masks_dir`를 둘 다 지정한다. 폴더 방식만 사용할 때는 `objects_manifest`와 `backgrounds_manifest`를 생략할 수 있다.
+원래 샘플 Manifest 설정은 `configs/samples/online.json`에 보관한다. `configs/online.json`은 실제 객체·마스크·배경 폴더를 읽는다. 객체·마스크 폴더 입력을 지정하면 객체 Manifest보다 우선하고, 배경 폴더 입력을 지정하면 배경 Manifest보다 우선한다. 객체 폴더 방식에서는 `objects_dir`와 `masks_dir`를 둘 다 지정한다. 폴더 방식만 사용할 때는 `objects_manifest`와 `backgrounds_manifest`를 생략할 수 있다.
 
 Manifest 방식에서 `copy_paste.asset_root`는 객체와 배경의 공통 로컬 루트다. 설정 파일의 루트 경로는 프로젝트 루트 기준이고, Manifest 및 Manifest 내부 이미지 경로는 `asset_root` 기준이다. 루트 밖으로 나가는 경로나 URL은 거부한다. 객체 Manifest 예:
 
@@ -115,7 +115,7 @@ Manifest 방식에서 `copy_paste.asset_root`는 객체와 배경의 공통 로�
 
 각 객체를 선택한 뒤 그 category의 범위에서 회전 전 긴 변을 정수 픽셀로 균등 선택한다. `[64, 64]`면 해당 클래스는 64픽셀로 고정한다. 가로·세로 비율은 유지하고 최종 보이는 마스크로 정답 박스를 다시 계산한다. 회전·부분 가림 이후 박스 긴 변은 요청한 값과 다를 수 있다. `online`·`online_patch` 학습, preview, 일반 online export가 같은 규칙을 사용한다. Qwen 변환 여부와 관계없이 적용된다.
 
-매핑에 없는 클래스는 기존 공통 범위 또는 가중치 목록을 사용한다. 매핑 생략과 `{}`는 기존 결과·난수 흐름을 유지한다. 알 수 없는 category ID나 잘못된 범위는 시작할 때 오류로 알린다. 현재 `online_patch.json`에는 위 1~5번 클래스별 크기와 `object_1`~`object_5` 폴더 매핑을 넣었고 `num_classes`도 5로 맞췄다. `unique_classes: true`로 클래스 중복을 막고 `[5, 5]` 개수 설정에 따라 패치마다 각 클래스 하나씩 배치한다. 실제 5개 클래스의 검증 COCO 경로를 설정해야 하며, 기존 단일 클래스 `data/sample` JSON으로는 실행할 수 없다. 기존 학습의 크기 설정을 바꾸고 가중치를 이어서 사용할 때는 `--checkpoint`를 사용한다. 설정이 달라지면 엄격한 `--resume`는 거부한다.
+매핑에 없는 클래스는 기존 공통 범위 또는 가중치 목록을 사용한다. 매핑 생략과 `{}`는 기존 결과·난수 흐름을 유지한다. 알 수 없는 category ID나 잘못된 범위는 시작할 때 오류로 알린다. 현재 `online_patch.json`에는 위 1~5번 클래스별 크기와 `object_1`~`object_5` 폴더 매핑을 넣었고 `num_classes`도 5로 맞췄다. `unique_classes: true`로 클래스 중복을 막고 `[5, 5]` 개수 설정에 따라 패치마다 각 클래스 하나씩 배치한다. 현재 실제 5개 클래스 검증 COCO 경로가 설정되어 있으며 다른 서버에서는 경로를 바꾼다. 단일 클래스 `data/sample` JSON으로는 이 5클래스 설정을 실행할 수 없다. 기존 학습의 크기 설정을 바꾸고 가중치를 이어서 사용할 때는 `--checkpoint`를 사용한다. 설정이 달라지면 엄격한 `--resume`는 거부한다.
 
 **명령에 `--object-size`나 `--object-size-range`를 지정하면 클래스별 매핑을 제거하고 모든 클래스에 CLI 크기를 적용한다.** 이 경우 startup 로그로 override를 알린다. 클래스별 JSON을 사용하려면 해당 공통 크기 CLI 옵션을 빼야 한다. 다른 합성 CLI 옵션은 클래스별 크기 설정을 유지한다.
 
@@ -222,7 +222,7 @@ python run.py preview \
   --output outputs/preview_train_degraded_v1
 ```
 
-같은 두 객체 효과 옵션은 `train`·`paste-multi`·`export`에도 사용할 수 있다. CLI는 해당 실행의 JSON을 덮어쓰며, 학습에 지속 적용하려면 실제 학습 JSON에 저장한다. 추가 패키지는 없다. 실행 중인 학습은 config를 다시 읽지 않으므로 새 실행부터 적용한다. 현재 네 비교 config는 해상도 `[0.25, 0.5]`를 사용하고, 블러는 일반 online 쌍 `[0.8, 0.8]`, patch 쌍과 `paste_multi.json` `[0.4, 1.0]`이다. 위 `[0.8, 1.6]` 예시는 더 강한 블러를 CLI로 시험하는 설정이며 학습 JSON을 덮어쓴다. 기존 `online.json`·`online_patch.json`은 그대로다. 보정 전후를 실제 원본 패치와 비교해 조절한다.
+같은 두 객체 효과 옵션은 `train`·`paste-multi`·`export`에도 사용할 수 있다. CLI는 해당 실행의 JSON을 덮어쓰며, 학습에 지속 적용하려면 실제 학습 JSON에 저장한다. 추가 패키지는 없다. 실행 중인 학습은 config를 다시 읽지 않으므로 새 실행부터 적용한다. 현재 네 비교 config는 해상도 `[0.25, 0.5]`를 사용하고, 블러는 일반 online 쌍 `[0.8, 0.8]`, patch 쌍과 `paste_multi.json` `[0.4, 1.0]`이다. 위 `[0.8, 1.6]` 예시는 더 강한 블러를 CLI로 시험하는 설정이며 학습 JSON을 덮어쓴다. 기존 `online.json`·`online_patch.json`은 데이터 경로·클래스·폴더 입력만 맞췄고 이 객체 효과를 추가하지 않았다. 보정 전후를 실제 원본 패치와 비교해 조절한다.
 
 학습 Dataset은 합성 이미지·Mask를 메모리에서 바로 YOLOX로 전달하고 파일을 쓰지 않는다. `train`, `preview`, `export`에서 객체 수·크기를 명령 옵션으로 바꾸면 해당 실행에만 적용한다. 원래 JSON 파일은 수정하지 않는다. `--object-size`와 `--object-size-range`는 함께 지정하지 않는다.
 

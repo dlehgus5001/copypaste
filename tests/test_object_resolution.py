@@ -26,7 +26,7 @@ def config(tmp_path):
     torch.set_num_threads(2)
     data = tmp_path / "source"
     make_sample_data(data, train_images=2, val_images=1)
-    values = json.loads((ROOT / "configs/online.json").read_text())
+    values = json.loads((ROOT / "configs/samples/online.json").read_text())
     values.update(mode="online_patch", data_dir=str(data), input_size=[64, 64],
                   test_size=[64, 64], max_epoch=1, scheduler="cos", patch={"size": [64, 64]},
                   output_dir=str(tmp_path / "training"), exp_name="resolution_test")

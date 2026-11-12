@@ -1,6 +1,6 @@
 # 큰 이미지의 패치 학습
 
-`original_patch.json`, `online_patch.json`은 별도 설정이다. 기존 `original.json`, `online.json`, `online_folders.json`은 변경하지 않는다. 모델·Loss·Optimizer·Checkpoint는 기존 YOLOX 흐름을 공유한다. 기존 모드의 가중치는 새 설정에서 `--checkpoint /로컬/가중치.pth`로 미세조정할 수 있다. 설정이 달라지므로 기존 학습의 `--resume`으로 전환하지 않는다.
+`original_patch.json`, `online_patch.json`은 별도 설정이다. 합성 모드의 데이터 경로는 실제 데이터에 맞추되 모델·학습 조건·증강 설정은 유지한다. 합성 모드의 기존 설정에 없던 객체 블러·채도·해상도 효과는 추가하지 않는다. 설치 확인용 기존 샘플 설정은 `configs/samples/`에 보관한다. 모델·Loss·Optimizer·Checkpoint는 기존 YOLOX 흐름을 공유한다. 기존 모드의 가중치는 새 설정에서 `--checkpoint /로컬/가중치.pth`로 미세조정할 수 있다. 설정이 달라지므로 기존 학습의 `--resume`으로 전환하지 않는다.
 
 ## 원본 데이터와 경로
 
@@ -32,7 +32,7 @@
 }
 ```
 
-위 항목은 전체 설정이 아니라 경로·개수·크기 변경 예시다. 나머지는 제공된 `online_patch.json`을 사용한다. 이미지·마스크는 `object/type1/001.png` ↔ `mask/type1/001.png`로 연결한다. 배경에 이미 표시된 객체는 새로운 정답으로 자동 인식하지 않으므로 합성용 배경은 별도로 준비한다.
+위 항목은 전체 설정이 아니라 경로·개수·크기 변경 예시다. 나머지는 제공된 `online_patch.json`을 사용한다. 이미지·마스크는 `object/object_1/001.png` ↔ `mask/object_1/001.png`처럼 연결한다. 기본 실제 설정은 `object_1`~`object_5`를 category ID 1~5에 매핑한다. 배경에 이미 표시된 객체는 새로운 정답으로 자동 인식하지 않으므로 합성용 배경은 별도로 준비한다.
 
 ## 크기와 경계 처리
 

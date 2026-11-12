@@ -1,10 +1,10 @@
 {
   "mode": "online",
   "preset": "nano",
-  "num_classes": 1,
-  "data_dir": "data/sample",
-  "val_ann": "instances_val2017.json",
-  "val_name": "val2017",
+  "num_classes": 5,
+  "data_dir": "data/assets",
+  "val_ann": "/home/work/MATR2/도현/leave_one_out/split_03_val_가평교장/val.json",
+  "val_name": "/home/work/MATR2/레이블링완료데이터",
   "input_size": [128, 128],
   "test_size": [128, 128],
   "batch_size": 2,
@@ -45,6 +45,13 @@
     "gaussian_blend_sigma": 0.6,
     "blur_sigma": 0.3,
     "noise_std": 1.0,
-    "brightness_range": [0.9, 1.1]
+    "brightness_range": [0.9, 1.1],
+    "folder_categories": {
+      "object_1": 1,
+      "object_2": 2,
+      "object_3": 3,
+      "object_4": 4,
+      "object_5": 5
+    }
   }
 }

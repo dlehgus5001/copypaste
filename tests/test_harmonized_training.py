@@ -28,7 +28,7 @@ def config(tmp_path):
     make_sample_data(data, train_images=2, val_images=1)
     # Online training uses the real validation taxonomy, never a COCO train file.
     (data / "annotations/instances_train2017.json").unlink()
-    values = json.loads((ROOT / "configs/online.json").read_text())
+    values = json.loads((ROOT / "configs/samples/online.json").read_text())
     values.update(mode="online_patch_harmonized", data_dir=str(data),
         input_size=[64, 64], test_size=[64, 64], patch={"size": [64, 64]},
         max_epoch=1, scheduler="cos", batch_size=2, hsv_prob=0, flip_prob=0,

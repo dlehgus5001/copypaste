@@ -16,8 +16,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--original-config", default="configs/original.json")
-    parser.add_argument("--online-config", default="configs/online.json")
+    parser.add_argument("--original-config", default="configs/samples/original.json")
+    parser.add_argument("--online-config", default="configs/samples/online.json")
     parser.add_argument("--output", default="artifacts/gpu_validation.json")
     args = parser.parse_args()
     report = {"status": "running", "checks": [], "unverified": []}

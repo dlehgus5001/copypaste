@@ -1,5 +1,11 @@
 # 실제 실행 테스트 결과
 
+## 2026-11-12 기존 online 설정 경로 갱신, 증강 유지
+
+`online.json`·`online_patch.json`·`online_folders.json`도 data_dir=data/assets 및 사용자가 지정한 실제 검증 JSON·이미지 절대 경로로 맞췄다. 기존 1클래스 설정은 실제 taxonomy에 맞춰 5클래스로 변경했고, online.json의 샘플 manifest 입력은 실제 object/mask/background 폴더와 object_1~5 클래스 매핑으로 전환했다. 기존 학습 조건 및 모든 증강·객체 선택 값은 변경하지 않았다. 기존 파일에 없던 객체 blur·채도·해상도 옵션을 추가하지 않았으며 기존 전체 이미지 blur_sigma=0.3은 유지했다. 기존 online_patch의 중립 객체 색/블러 값도 유지했다.
+
+갱신 전 설정을 `configs/samples/`에 보관하고 샘플 기반 테스트·샘플 실행 안내·GPU 검증 기본 입력을 이 경로로 옮겼다. 원본 original/original_patch는 학습용 COCO 경로 확인 전이므로 아직 실제 데이터 설정으로 바꾸지 않았다. 네트워크 차단 아래 샘플 CLI·startup 검사 **13 passed, 1 deselected**, 30.59초([`reports/pytest-legacy-config-samples.xml`](reports/pytest-legacy-config-samples.xml))를 확인했다. 제외한 1개는 CUDA 고정 환경 프로필 검사다. 추가로 갱신 전후 입력 경로 이외의 설정·증강 key/value가 동일하고 추가 key는 입력 폴더 관련 항목뿐임을 확인했다. 개발용 5클래스 자산으로 세 설정의 합성도 확인했다([`reports/legacy-config-data-paths.json`](reports/legacy-config-data-paths.json)). 실제 폐쇄망 데이터 접근·GPU 실행은 미검증이다.
+
 ## 2026-11-12 사용자 폐쇄망 설정 동기화
 
 사용자가 제공한 프로필에 맞춰 online_harmonized/online_baseline은 batch 2·2 EPOCH·채도 [0.3,0.5]·대비 [0.8,0.95]·블러 [0.8,0.8]로, online_patch_harmonized/online_patch_baseline은 batch 64·50 EPOCH·클래스 1/2 크기 [30,110]·3/4/5 크기 [40,110]·채도 [0.2,0.5]·대비 [0.9,1.0]·블러 [0.4,1.0]로 맞췄다. 사용자 추가 응답에 따라 네 학습 config 모두 data_dir=data/assets 및 제공된 실제 가평교장 검증 JSON·레이블링 이미지 절대 경로를 사용한다. 최신 해상도 저하 [0.25,0.5]는 유지했다. paste_multi.copy_paste는 patch 학습 설정을 그대로 복사해 합성 조건을 일치시켰다. 기존 샘플용 online.json/online_patch.json과 원본 학습 설정은 변경하지 않았다.

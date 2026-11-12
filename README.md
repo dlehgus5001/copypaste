@@ -44,13 +44,13 @@ python run.py check-env --include-build --output artifacts/installed-env
 # pip install --no-index --find-links=./wheelhouse -r requirements-build.txt
 python run.py build
 python run.py sample-data  # 기존 샘플이 있으면 생략
-python run.py train --mode online --config configs/online.json --device cuda \
+python run.py train --mode online --config configs/samples/online.json --device cuda \
   --objects-per-image 5 --object-size-range 16 24 --require-object-count
 ```
 
 위 학습 명령은 샘플 이미지마다 객체 **5개**를 새로 합성하고 크기를 **16~24픽셀**에서 선택합니다. 합성 이미지와 정답 박스·클래스를 메모리에서 바로 모델에 전달하므로 **합성 이미지나 학습용 COCO JSON을 미리 만들거나 저장할 필요가 없습니다.** 모델 checkpoint와 학습 로그는 `outputs/online/<exp_name>/`에 저장합니다. 기존 검증용 COCO annotation은 입력으로 필요합니다.
 
-학습 횟수는 `configs/online.json`의 `max_epoch`, EPOCH당 합성할 이미지 분량은 `copy_paste.epoch_length`, 배치 크기는 `batch_size`에서 지정합니다. 객체 크기는 회전 전 긴 변 기준이며 `--object-size 24`를 쓰면 24픽셀로 고정할 수 있습니다.
+위 샘플 학습 횟수는 `configs/samples/online.json`의 `max_epoch`, EPOCH당 합성할 이미지 분량은 `copy_paste.epoch_length`, 배치 크기는 `batch_size`에서 지정합니다. 객체 크기는 회전 전 긴 변 기준이며 `--object-size 24`를 쓰면 24픽셀로 고정할 수 있습니다.
 
 객체 종류별 크기는 사용하는 JSON의 `copy_paste.object_long_side_range_by_category`에서 지정합니다. 예를 들어 `{"1": [48, 64], "3": [80, 96]}`이면 COCO category ID 1은 48~64픽셀, 3은 80~96픽셀로 합성합니다. `[64, 64]`는 고정 크기이고, 지정하지 않은 클래스는 공통 크기 설정을 따릅니다. 미리보기와 학습에 동일하게 적용됩니다. **클래스별 JSON을 사용할 때는 `--object-size`·`--object-size-range`를 명령에서 빼세요.** 이 CLI 옵션은 모든 클래스의 크기를 덮어쓰며 적용 시 로그로 알립니다. [전체 예시](configs/ONLINE_DATA.md)를 참고하세요.
 
@@ -58,7 +58,7 @@ python run.py train --mode online --config configs/online.json --device cuda \
 
 객체에만 약한 블러와 흙색 얼룩을 넣으려면 `--object-blur-sigma-range 0.4 0.8 --object-dirt-strength-range 0.2 0.45`를 추가합니다. 이때 채도는 `--object-saturation-range 0.8 1.0`처럼 비교적 유지한 상태에서 확인할 수 있습니다. 두 효과의 기본값은 `[0, 0]`으로 꺼져 있습니다. 흙색과 JSON 설정은 [객체 블러와 흙이 묻은 표면](configs/ONLINE_DATA.md#객체-블러와-흙이-묻은-표면)을 참고하세요.
 
-객체 디테일을 더 줄이려면 `--object-resolution-scale-range 0.25 0.5 --object-blur-sigma-range 0.8 1.6`을 사용합니다. 최종 긴 변 80픽셀 객체를 내부적으로 약 20~40픽셀로 줄였다가 복원하며 마스크·정답 박스·최종 크기는 유지합니다. `copy_paste.object_resolution_scale_range`로 저장할 수 있고, 생략 또는 `[1, 1]`이면 해상도 저하는 꺼집니다. 현재 네 비교 config는 해상도 `[0.25, 0.5]`를 유지하고, 블러는 일반 online 쌍 `[0.8, 0.8]`, patch 쌍과 `paste_multi.json` `[0.4, 1.0]`을 사용합니다. 위 `[0.8, 1.6]` 명령은 더 강한 블러를 시험하는 예시입니다. 기존 `online.json`·`online_patch.json`은 유지합니다. 자세한 범위·미리보기 명령은 [HARMONIZER_TRAINING.md](HARMONIZER_TRAINING.md)를 참고하세요.
+객체 디테일을 더 줄이려면 `--object-resolution-scale-range 0.25 0.5 --object-blur-sigma-range 0.8 1.6`을 사용합니다. 최종 긴 변 80픽셀 객체를 내부적으로 약 20~40픽셀로 줄였다가 복원하며 마스크·정답 박스·최종 크기는 유지합니다. `copy_paste.object_resolution_scale_range`로 저장할 수 있고, 생략 또는 `[1, 1]`이면 해상도 저하는 꺼집니다. 현재 네 비교 config는 해상도 `[0.25, 0.5]`를 유지하고, 블러는 일반 online 쌍 `[0.8, 0.8]`, patch 쌍과 `paste_multi.json` `[0.4, 1.0]`을 사용합니다. 위 `[0.8, 1.6]` 명령은 더 강한 블러를 시험하는 예시입니다. 기존 `online.json`·`online_patch.json`은 데이터 경로·클래스·폴더 입력만 실제 데이터에 맞추며 기존 증강 설정을 유지합니다. 자세한 범위·미리보기 명령은 [HARMONIZER_TRAINING.md](HARMONIZER_TRAINING.md)를 참고하세요.
 
 기본적으로 같은 객체·마스크 세트를 여러 번 선택할 수 있습니다. 이미지 안에서 서로 다른 세트만 선택하려면 `--unique-objects`를 추가하고 객체 세트를 5개 이상 준비하세요. 객체를 5개 배치할 수 없으면 재시도 후 오류로 알립니다. `preview`와 `export`는 합성 결과를 파일로 확인하거나 반출할 때만 직접 실행하는 선택 도구이며 학습에서 자동 호출하지 않습니다.
 
@@ -71,11 +71,11 @@ python run.py train --mode online_patch --config configs/online_patch.json \
   --device cuda --unique-classes
 ```
 
-위 클래스 중복 방지 명령은 실제 다중 클래스 데이터로 수정한 설정에서 사용하세요. 단일 클래스 설정에서 서로 다른 클래스의 객체 5개를 요청하면 클래스 부족 오류가 발생합니다. 현재 `online_patch.json`은 5개 클래스와 클래스별 크기 설정을 포함하므로 `data_dir`·`val_ann`·`val_name`을 실제 category ID 1~5가 있는 검증 데이터에 맞춰야 합니다. 기존 `data/sample`의 단일 클래스 JSON과는 호환되지 않습니다.
+현재 `online.json`·`online_patch.json`·`online_folders.json`은 category ID 1~5의 실제 검증 데이터 경로를 사용합니다. `data_dir`는 `data/assets`, `val_ann`·`val_name`은 사용자가 지정한 폐쇄망 절대 경로입니다. 다른 서버에서는 해당 경로를 바꾸세요. 데이터 경로·클래스 수·객체 폴더 입력만 맞췄고, 기존에 없던 객체 블러·채도·해상도 옵션은 추가하지 않았습니다. `online_patch.json`의 기존 비활성 객체 효과 값도 유지합니다. 기존에 있던 전체 이미지 `blur_sigma: 0.3`은 그대로이며, 새 객체 전용 효과와 별개입니다. 설치 확인용 원래 설정은 `configs/samples/`에 보관하며, `data/sample`을 생성한 후 명시적으로 지정합니다. 단일 클래스 샘플에서 `--unique-classes`로 5종을 요청하면 클래스 부족 오류가 발생합니다.
 
 각 명령의 옵션은 `python run.py --help`, `python run.py train --help` 등으로 확인합니다. `train --mode original`은 `configs/original.json`, `train --mode online`은 `configs/online.json`을 기본으로 사용합니다. `--config`로 다른 설정을 지정할 수 있으며, 명시한 `--mode`와 설정의 모드가 다르면 오류로 종료합니다. C++ 빌드에는 시스템의 `gcc`·`g++`가 필요하고, 학습·평가 등의 네트워크 차단 실행에는 Linux의 `libseccomp`가 필요합니다.
 
-GPU가 없는 머신은 두 학습·평가 명령의 `cuda`를 `cpu`로 바꾸어 진단합니다. 별도 venv와 전체 wheelhouse는 아래처럼 새 환경을 완전히 재현할 때 사용하는 경로입니다.
+GPU가 없는 머신은 `configs/samples/online.json`·`configs/samples/original.json`을 지정하고 `--device cpu`로 샘플 진단을 실행합니다. 실제 데이터용 기본 config는 폐쇄망 파일 경로를 사용합니다. 별도 venv와 전체 wheelhouse는 아래처럼 새 환경을 완전히 재현할 때 사용하는 경로입니다.
 
 ## 내 객체·마스크 폴더로 합성 학습
 
@@ -84,17 +84,17 @@ GPU가 없는 머신은 두 학습·평가 명령의 `cuda`를 `cpu`로 바꾸�
 ```text
 data/assets/
   object/
-    type1/001.png
-    type2/001.png
-    type3/001.png
-    type4/001.png
-    type5/001.png
+    object_1/001.png
+    object_2/001.png
+    object_3/001.png
+    object_4/001.png
+    object_5/001.png
   mask/
-    type1/001.png
-    type2/001.png
-    type3/001.png
-    type4/001.png
-    type5/001.png
+    object_1/001.png
+    object_2/001.png
+    object_3/001.png
+    object_4/001.png
+    object_5/001.png
   background/
     bg_001.png
     bg_002.png
@@ -105,9 +105,9 @@ python run.py train --mode online --config configs/online_folders.json --device 
   --objects-per-image 5 --object-size-range 16 24 --require-object-count
 ```
 
-이 설정은 `data/assets/object`, `mask`, `background`를 하위 폴더까지 자동으로 읽습니다. `object/type1/001.png`는 `mask/type1/001.png`와 한 세트입니다. 마스크는 객체 이미지와 같은 크기의 단일 채널 이진 이미지로, 객체는 흰색(255), 나머지는 검정(0)으로 준비하세요. 대응하는 마스크가 없거나 후보가 여러 개이면 학습 전에 오류로 알립니다.
+이 설정은 `data/assets/object`, `mask`, `background`를 하위 폴더까지 자동으로 읽습니다. `object/object_1/001.png`는 `mask/object_1/001.png`와 한 세트입니다. 마스크는 객체 이미지와 같은 크기의 단일 채널 이진 이미지로, 객체는 흰색(255), 나머지는 검정(0)으로 준비하세요. 대응하는 마스크가 없거나 후보가 여러 개이면 학습 전에 오류로 알립니다.
 
-`configs/online_folders.json`에서 `max_epoch`, `batch_size`, `copy_paste.epoch_length`를 바꾸면 학습 횟수와 배치 크기, EPOCH당 이미지 분량을 조절합니다. 이 파일은 작은 샘플 모델·입력 크기와 `data/sample`의 검증 데이터를 사용하므로, 실제 학습에서는 `data_dir`·`num_classes`·모델 설정도 맞추세요. 검증 클래스가 하나라면 위 5개 폴더의 객체는 모두 같은 클래스입니다. 5개 객체는 전체 파일 목록에서 랜덤으로 선택하며, 폴더마다 하나씩 선택하는 규칙은 아닙니다. 폴더별 클래스 지정과 경로 변경은 [configs/ONLINE_DATA.md](configs/ONLINE_DATA.md)를 참고하세요.
+`configs/online_folders.json`에서 `max_epoch`, `batch_size`, `copy_paste.epoch_length`를 바꾸면 학습 횟수와 배치 크기, EPOCH당 이미지 분량을 조절합니다. 이 파일은 실제 5클래스 검증 경로와 `object_1`~`object_5` → category ID 1~5 매핑을 사용합니다. 작은 모델·입력 크기·학습 횟수와 기존 증강은 유지했으므로 필요할 때 직접 조절하세요. 객체는 전체 목록에서 랜덤으로 선택하며, 기본적으로 폴더마다 하나씩 고르는 규칙은 아닙니다. 폴더별 클래스 지정과 경로 변경은 [configs/ONLINE_DATA.md](configs/ONLINE_DATA.md)를 참고하세요.
 
 ## Harmonizer 적용 여부를 나눠 합성 학습하기
 
@@ -289,13 +289,13 @@ python run.py preview --config configs/online.json --output outputs/preview --co
 GPU가 없을 때는 CPU 진단을 명시합니다. 이 경로는 공식 모델·Loss·SGD·증강을 사용하지만 CUDA 전용 공식 Trainer를 CPU에서 실행하는 경로는 아닙니다.
 
 ```bash
-python run.py train --mode original --config configs/original.json --device cpu --stop-after-epoch 1
-python run.py train --mode original --config configs/original.json --device cpu \
+python run.py train --mode original --config configs/samples/original.json --device cpu --stop-after-epoch 1
+python run.py train --mode original --config configs/samples/original.json --device cpu \
   --resume outputs/original/sample_nano/latest_ckpt.pth
-python run.py train --mode online --config configs/online.json --device cpu
+python run.py train --mode online --config configs/samples/online.json --device cpu
 ```
 
-샘플 설정은 작은 `nano`, 128×128, batch 2, 2 epochs입니다. 실제 학습에는 별도 설정 파일에서 `preset`, `input_size`, `test_size`, `batch_size`, `max_epoch`, `basic_lr_per_img`, 증강과 schedule을 지정하세요. 기본 학습률은 **이미지당 학습률**이며, YOLOX가 batch size를 곱합니다. `warmup_epochs + no_aug_epochs < max_epoch`를 유지해야 합니다. `preset`은 nano/tiny/s/m/l/x를 지원합니다. 멀티 GPU/DDP는 이 프로젝트의 검증 범위에 포함하지 않습니다.
+`python run.py sample-data`로 데이터를 준비한 뒤 위 명령을 실행합니다. `configs/samples/`의 기본 Original/Online 샘플 설정은 작은 `nano`, 128×128, batch 2, 2 epochs입니다. 실제 학습에는 별도 설정 파일에서 `preset`, `input_size`, `test_size`, `batch_size`, `max_epoch`, `basic_lr_per_img`, 증강과 schedule을 지정하세요. 기본 학습률은 **이미지당 학습률**이며, YOLOX가 batch size를 곱합니다. `warmup_epochs + no_aug_epochs < max_epoch`를 유지해야 합니다. `preset`은 nano/tiny/s/m/l/x를 지원합니다. 멀티 GPU/DDP는 이 프로젝트의 검증 범위에 포함하지 않습니다.
 
 ## 기존 COCO 데이터와 로컬 가중치
 
@@ -325,7 +325,7 @@ python run.py evaluate --config configs/original.json --device cuda \
 
 ## 온라인 합성 데이터
 
-데이터 계약과 모든 합성 옵션은 [configs/ONLINE_DATA.md](configs/ONLINE_DATA.md)를 따릅니다. 폴더 자동 수집은 `configs/online_folders.json`의 `copy_paste.objects_dir`, `masks_dir`, `backgrounds_dir`를 사용합니다. 상대 경로는 `copy_paste.asset_root` 기준입니다. 기존 샘플 설정 `configs/online.json`의 manifest 입력도 계속 지원합니다.
+데이터 계약과 모든 합성 옵션은 [configs/ONLINE_DATA.md](configs/ONLINE_DATA.md)를 따릅니다. 폴더 자동 수집은 `configs/online_folders.json`의 `copy_paste.objects_dir`, `masks_dir`, `backgrounds_dir`를 사용합니다. 상대 경로는 `copy_paste.asset_root` 기준입니다. 원래 샘플 Manifest 입력은 `configs/samples/online.json`에서 유지하며, `configs/online.json`은 실제 object/mask/background 폴더를 읽습니다.
 
 Online 학습은 결과를 메모리에서 생성하여 바로 DataLoader에 전달하며 합성 이미지와 annotation JSON을 저장하지 않습니다. 클래스는 기존 검증용 COCO category ID를 사용하고 내부 YOLOX label index로 변환합니다. 선택 도구인 `preview`는 눈으로 확인할 이미지·bbox·mask·Metadata JSON을, `export`는 데이터셋 반출용 이미지와 표준 COCO annotation JSON을 저장합니다. 저장 도구의 사용법은 [configs/ONLINE_DATA.md](configs/ONLINE_DATA.md)를 참고하세요.
 
@@ -346,6 +346,6 @@ python run.py validate-gpu
 python scripts/environment_probe.py --output reports/environment-target.json
 ```
 
-`run.py`는 학습·평가·미리보기·GPU 검증 실행 시 기존 네트워크 차단 도구를 적용합니다. GPU 검증 도구는 GPU가 없으면 `blocked` 결과를 저장하고 exit 2로 종료합니다. CPU 테스트의 GPU 항목은 skipped로 표시합니다. GPU 검증은 샘플 설정이 기본이며, 실제 데이터 설정을 `--original-config`, `--online-config`로 전달해야 실데이터를 검사합니다. Native CUDA prefetcher의 대기 batch와 sampler cursor는 checkpoint에 저장하지 않으므로 GPU resume의 합성·증강 순서가 bit-exact하게 같다고 보장하지 않습니다.
+`run.py`는 학습·평가·미리보기·GPU 검증 실행 시 기존 네트워크 차단 도구를 적용합니다. GPU 검증 도구는 GPU가 없으면 `blocked` 결과를 저장하고 exit 2로 종료합니다. CPU 테스트의 GPU 항목은 skipped로 표시합니다. GPU 검증에서 샘플을 쓰려면 `--original-config configs/samples/original.json --online-config configs/samples/online.json`을 지정하고, 실데이터 검사에는 해당 실제 학습 설정을 전달합니다. Native CUDA prefetcher의 대기 batch와 sampler cursor는 checkpoint에 저장하지 않으므로 GPU resume의 합성·증강 순서가 bit-exact하게 같다고 보장하지 않습니다.
 
 원본 출처·라이선스는 `third_party/UPSTREAM.json`, 원본 파일 SHA256은 `third_party/SOURCE_SHA256.json`에 있습니다. 원본 YOLOX 파일은 수정하지 않고 `src/offline_yolox/`에 실행 어댑터를 구현했습니다. wheel과 로컬 가상환경·출력은 Git에 포함하지 않습니다. 폐쇄망 반입 시에는 wheelhouse를 소스와 함께 별도로 전달해야 합니다.

@@ -1,10 +1,10 @@
 {
   "mode": "online",
   "preset": "nano",
-  "num_classes": 1,
-  "data_dir": "data/sample",
-  "val_ann": "instances_val2017.json",
-  "val_name": "val2017",
+  "num_classes": 5,
+  "data_dir": "data/assets",
+  "val_ann": "/home/work/MATR2/도현/leave_one_out/split_03_val_가평교장/val.json",
+  "val_name": "/home/work/MATR2/레이블링완료데이터",
   "input_size": [128, 128],
   "test_size": [128, 128],
   "batch_size": 2,
@@ -23,9 +23,7 @@
   "exp_name": "sample_nano",
   "ema": true,
   "copy_paste": {
-    "asset_root": "data/sample",
-    "objects_manifest": "objects/manifest.json",
-    "backgrounds_manifest": "backgrounds/manifest.json",
+    "asset_root": "data/assets",
     "epoch_length": 8,
     "object_count": [5, 5],
     "unique_objects": false,
@@ -44,6 +42,17 @@
     "gaussian_blend_sigma": 0.6,
     "blur_sigma": 0.3,
     "noise_std": 1.0,
-    "brightness_range": [0.9, 1.1]
+    "brightness_range": [0.9, 1.1],
+    "objects_dir": "object",
+    "masks_dir": "mask",
+    "backgrounds_dir": "background",
+    "mask_suffix": "",
+    "folder_categories": {
+      "object_1": 1,
+      "object_2": 2,
+      "object_3": 3,
+      "object_4": 4,
+      "object_5": 5
+    }
   }
 }

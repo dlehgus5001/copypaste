@@ -87,6 +87,14 @@ python scripts/no_network.py python -m pytest -q
 python scripts/no_network.py python scripts/validate_gpu.py
 ```
 
+실제 학습용 `configs/online.json` 등은 폐쇄망 데이터 경로를 사용합니다. 개발용 도형 샘플로 설치를 점검하려면 먼저 `python run.py sample-data`를 실행하고 `configs/samples/`의 설정을 지정합니다. 기존 샘플 프로필의 증강·학습 조건은 보관본에 유지합니다.
+
+```bash
+python run.py train --mode online --config configs/samples/online.json --device cpu
+python run.py validate-gpu --original-config configs/samples/original.json \
+  --online-config configs/samples/online.json
+```
+
 동일 venv에 설치 명령을 다시 실행할 수 있습니다. 별도 venv 설치는 추가 디스크 공간이 필요합니다. `validate_gpu.py`는 CUDA tensor/NMS, FP32/AMP forward/backward, 두 학습 모드의 epoch·resume·평가를 검사합니다. GPU가 없으면 exit 2 및 `blocked` 보고서를 남깁니다. 샘플 CPU 진단 성공만으로 GPU 적용을 승인하지 마세요.
 
 사전학습 가중치를 다운로드하는 코드 경로는 사용하지 않습니다. `--checkpoint /local/model.pth`로 직접 지정하며, 실제 제공되지 않은 가중치는 미검증입니다. Runtime은 로컬 이미지·마스크·annotation·가중치만 읽고 외부 API·온라인 인증이 필요하지 않습니다.

@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def config(tmp_path):
     data = tmp_path / "data"
     make_sample_data(data, train_images=2, val_images=1)
-    config = json.loads((ROOT / "configs/online.json").read_text())
+    config = json.loads((ROOT / "configs/samples/online.json").read_text())
     config.update(data_dir=str(data), output_dir=str(tmp_path / "output"),
                   max_epoch=1, scheduler="cos", exp_name="startup_test")
     config["copy_paste"].update(asset_root=str(data), epoch_length=2,
