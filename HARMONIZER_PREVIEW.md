@@ -50,9 +50,25 @@ python run.py paste-multi \
 
 모든 클래스에 같은 범위를 적용하고 싶으면 `--object-size-range 48 96`을 추가한다. 이 CLI 옵션은 클래스별 범위를 덮어쓴다. 고정 크기는 `--object-size 64`다. 클래스별 크기를 사용하려면 이 두 옵션을 생략한다.
 
-붙이기 전 객체 블러는 config의 `copy_paste.object_blur_sigma_range`로 조절한다. 기본 `[0.4, 1.0]`은 객체 크기 변환 후 각 객체마다 sigma를 무작위로 골라 약한 Gaussian blur를 적용하고 배경에 붙인다. 배경과 이진 마스크·박스는 이 블러로 바뀌지 않는다. Harmonizer는 그 다음 합성 이미지의 색·조명을 보정한다. `--object-blur-sigma-range 0.8 1.5`를 추가하면 더 강한 범위를 사용할 수 있고, `--object-blur-sigma-range 0 0`은 블러를 끈다. 작은 객체는 과하게 흐려질 수 있으므로 before.png에서 확인하며 조절한다. `gaussian_blend_sigma`는 붙이는 경계의 알파 feathering, `blur_sigma`는 합성 전체에 적용하는 별도 옵션이므로 객체 블러와 구분한다.
+붙이기 전 객체 해상도는 `copy_paste.object_resolution_scale_range: [0.25, 0.5]`로 낮춘다. 긴 변 80픽셀 객체라면 내부적으로 약 20~40픽셀로 줄였다가 80픽셀로 복원해 디테일을 줄인다. 객체마다 비율을 무작위로 선택하며 최종 크기·마스크·박스와 배경 픽셀은 유지한다. 마스크 정규화로 외부의 검은 픽셀이 섞이는 것을 막는다. 값은 `0 < MIN <= MAX <= 1`, 작을수록 강한 저하다. `[0.5, 0.75]`는 더 약하고 `[0.15, 0.3]`은 더 강하다. 생략 또는 `[1, 1]`이면 해상도 저하를 끈다. CLI에서는 `--object-resolution-scale-range 0.25 0.5`를 사용한다.
 
-붙이기 전 색상도 기본적으로 낮춘다. `copy_paste.object_saturation_range: [0.5, 0.8]`은 채도를 낮춰 색의 선명함을 줄이고, `object_contrast_range: [0.8, 0.95]`는 명암 차이를 약하게 줄인다. 객체마다 범위 안에서 값을 무작위로 선택한다. 처리 순서는 크기 변환 → 객체 채도·대비 조정 → 객체 블러 → 배경 합성 → Harmonizer다. 배경 색과 마스크·박스는 이 객체 효과로 바뀌지 않는다. 원래 채도·대비를 사용하려면 두 범위를 각각 `[1, 1]`로 지정한다. CLI에서는 `--object-saturation-range 0.5 0.8 --object-contrast-range 0.8 0.95`로 덮어쓸 수 있다. `before.png`에서 보정 전 색을 확인하며, Harmonizer가 이후 색을 추가로 조절하므로 `after.png`도 함께 확인한다.
+붙이기 전 객체 블러는 `copy_paste.object_blur_sigma_range`로 조절한다. 기본 `[0.8, 1.6]`은 해상도 저하 후 각 객체마다 sigma를 무작위로 골라 Gaussian blur를 적용한다. `--object-blur-sigma-range 0 0`은 블러를 끈다. 작은 객체는 과하게 흐려질 수 있으므로 `before.png`에서 확인하며 조절한다. `gaussian_blend_sigma`는 경계의 알파 feathering, `blur_sigma`는 합성 전체에 적용하는 별도 옵션이다.
+
+색상 기본값은 학습 비교 config와 같은 채도 `[0.2, 0.5]`·대비 `[0.9, 1.0]`이다. 처리 순서는 크기 변환 → 객체 채도·대비 → 흙색 얼룩(선택) → 해상도 저하 → 블러 → 배경 합성 → Harmonizer다. 원래 채도·대비를 사용하려면 두 범위를 각각 `[1, 1]`로 지정한다. `before.png`에서 저하된 기본 합성을 보고, 이후 색·조명을 추가로 바꾸는 Harmonizer의 `after.png`도 함께 확인한다. 이 처리가 실제 항공영상과 일치하거나 탐지 성능을 높인다고 검증한 것은 아니다.
+
+실제 학습 설정의 보정 결과는 다음처럼 확인한다. CPU 보정은 실행 중인 GPU 학습과 별도로 예시를 만들 때 사용할 수 있다.
+
+```bash
+python run.py preview \
+  --config configs/online_patch_harmonized.json \
+  --object-resolution-scale-range 0.25 0.5 \
+  --object-blur-sigma-range 0.8 1.6 \
+  --harmonizer-device cpu \
+  --count 5 \
+  --output outputs/preview_train_degraded_v1
+```
+
+`sample_0000.png`가 해당 학습 설정의 합성·보정 결과다. 같은 해상도·블러 옵션을 `train`과 `paste-multi`에도 지정할 수 있으며, 추가 패키지는 필요 없다. 실행 중인 학습의 config는 자동 갱신되지 않으므로 변경값은 새 실행부터 적용한다.
 
 배경을 특정 파일로 고정하려면 `--background /path/background.png`를 추가한다. 해당 이미지 안에서 자르는 패치 위치는 여전히 무작위다. 경로 루트는 config의 `copy_paste.asset_root` 또는 `--asset-root /path/assets`로 바꾼다. 새 실행에서 다른 조합을 원하면 config의 `seed`를 바꾼다. 같은 seed·입력·설정은 같은 합성을 재현한다.
 

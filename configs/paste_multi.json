@@ -45,9 +45,10 @@
     "min_visible_pixels": 8,
     "min_box_side_pixels": 2,
     "gaussian_blend_sigma": 0.6,
-    "object_saturation_range": [0.5, 0.8],
-    "object_contrast_range": [0.8, 0.95],
-    "object_blur_sigma_range": [0.4, 1.0],
+    "object_saturation_range": [0.2, 0.5],
+    "object_contrast_range": [0.9, 1.0],
+    "object_blur_sigma_range": [0.8, 1.6],
+    "object_resolution_scale_range": [0.25, 0.5],
     "brightness_range": [1, 1],
     "blur_sigma": 0,
     "noise_std": 0

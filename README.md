@@ -58,6 +58,8 @@ python run.py train --mode online --config configs/online.json --device cuda \
 
 객체에만 약한 블러와 흙색 얼룩을 넣으려면 `--object-blur-sigma-range 0.4 0.8 --object-dirt-strength-range 0.2 0.45`를 추가합니다. 이때 채도는 `--object-saturation-range 0.8 1.0`처럼 비교적 유지한 상태에서 확인할 수 있습니다. 두 효과의 기본값은 `[0, 0]`으로 꺼져 있습니다. 흙색과 JSON 설정은 [객체 블러와 흙이 묻은 표면](configs/ONLINE_DATA.md#객체-블러와-흙이-묻은-표면)을 참고하세요.
 
+객체 디테일을 더 줄이려면 `--object-resolution-scale-range 0.25 0.5 --object-blur-sigma-range 0.8 1.6`을 사용합니다. 최종 긴 변 80픽셀 객체를 내부적으로 약 20~40픽셀로 줄였다가 복원하며 마스크·정답 박스·최종 크기는 유지합니다. `copy_paste.object_resolution_scale_range`로 저장할 수 있고, 생략 또는 `[1, 1]`이면 해상도 저하는 꺼집니다. 새 네 비교 config와 `paste_multi.json`은 해상도 `[0.25, 0.5]`·블러 `[0.8, 1.6]`을 사용하며 기존 학습 config는 유지합니다. 자세한 범위·미리보기 명령은 [HARMONIZER_TRAINING.md](HARMONIZER_TRAINING.md)를 참고하세요.
+
 기본적으로 같은 객체·마스크 세트를 여러 번 선택할 수 있습니다. 이미지 안에서 서로 다른 세트만 선택하려면 `--unique-objects`를 추가하고 객체 세트를 5개 이상 준비하세요. 객체를 5개 배치할 수 없으면 재시도 후 오류로 알립니다. `preview`와 `export`는 합성 결과를 파일로 확인하거나 반출할 때만 직접 실행하는 선택 도구이며 학습에서 자동 호출하지 않습니다.
 
 **한 패치에서 같은 클래스가 두 번 나오지 않게 하려면** 사용하는 JSON의 `copy_paste`에 `"unique_classes": true`를 추가하세요. `1번+3번`은 가능하지만 `1번+1번`은 불가능합니다. 먼저 클래스를 중복 없이 선택한 다음 각 클래스 안에서 이미지·마스크를 랜덤 선택합니다. `object_count: [0, 5]`는 서로 다른 클래스로 0~5개를, `[5, 5]`는 5개를 요청합니다. 요청한 최대 수 이상의 클래스에 실제 객체·마스크 자산이 있어야 합니다. 기존 `unique_objects`는 파일 중복만 막는 옵션이며 의미를 바꾸지 않았습니다. `train`·`preview`·`export`에 `--unique-classes`를 추가해도 같은 설정을 적용할 수 있습니다.

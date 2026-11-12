@@ -1,5 +1,15 @@
 # 실제 실행 테스트 결과
 
+## 2026-11-12 객체 디테일 저하: 축소·복원과 강화된 블러
+
+`copy_paste.object_resolution_scale_range`와 공통 CLI `--object-resolution-scale-range MIN MAX`를 추가했다. 객체 크기·회전 및 색 보정 후 내부 해상도를 낮췄다가 최종 크기로 복원하고 기존 객체 블러를 적용한다. 색상과 mask 가중치를 함께 AREA 축소·LINEAR 복원해 검은 외부 픽셀이 섞이지 않도록 한다. 희박한 mask의 복원 가중치가 없으면 원래 픽셀을 유지한다. 배경·최종 크기·이진 mask·정답 box·클래스는 유지한다. 비율 범위는 0 < MIN <= MAX <= 1이며 미지정/[1,1]은 기존 픽셀·metadata·난수 흐름을 유지한다. 새 해상도 선택 난수는 기존 blur/dirt와 분리했다.
+
+네 비교 학습 config와 paste_multi는 내부 해상도 비율 [0.25,0.5] 및 블러 sigma [0.8,1.6]을 기본으로 사용한다. paste_multi의 채도·대비도 학습 비교 config의 [0.2,0.5]·[0.9,1.0]으로 맞췄다. 기존 online.json·online_patch.json 등은 변경하지 않았다. 각 baseline/harmonized 쌍은 mode·출력 경로·harmonizer 설정 외 비교 조건이 여전히 같음을 확인했다. 실행 중인 작업에는 소급 적용되지 않는다.
+
+네트워크 차단 아래 새 해상도 검사 **29 passed**, 19.14초([`reports/pytest-object-resolution.xml`](reports/pytest-object-resolution.xml)), 기존 객체 외형·다중 합성·Harmonizer 학습 회귀 **56 passed**, 40.41초([`reports/pytest-object-resolution-regression.xml`](reports/pytest-object-resolution-regression.xml))로 총 **85 passed, 0 failed, 0 skipped**다. 고주파 디테일 감소·색 번짐 방지·geometry/배경/원본 보존·재현·기존 효과 난수 호환·범위 오류·네 합성 모드·실제 preview/CPU 학습 CLI와 checkpoint 설정 저장을 확인했다. 기존 회귀에는 실제 로컬 Harmonizer 가중치를 사용하는 학습·preview·검증·EPOCH 재개 검사가 포함된다.
+
+별도로 실제 공식 Harmonizer를 사용한 개발용 640×640 합성 5객체의 after 결과를 비교했다. 해상도 저하/블러 강화 전후 mask·label·배경 픽셀이 같았고, 전경 내부 grayscale Laplacian 절댓값 평균은 2.424에서 1.507로 줄었다. 별도 공개 CLI에서 해상도 저하와 strength=1 실제 Harmonizer를 함께 켠 CPU 학습 1 EPOCH(2장)을 실행해 유한 양의 loss 11.882와 checkpoint를 확인했다. [`reports/object-resolution-runtime.json`](reports/object-resolution-runtime.json)에 기록했다. 개발용 도형 샘플의 검사이며 사용자 항공영상과의 일치나 탐지 AP 개선·GPU 성능을 검증한 결과는 아니다. pip check 및 공식 YOLOX 원본 170개 파일 hash 검사도 통과했다.
+
 ## 2026-11-05 Harmonizer 적용/미적용 YOLOX 합성 학습
 
 기존 `online`·`online_patch`를 유지하고 `online_harmonized`·`online_patch_harmonized`를 추가했다. 합성의 최종 가시 마스크 합집합으로 객체만 보정하고, 기존 TrainTransform 직전에 YOLOX에 넘긴다. Harmonizer는 FP32·eval·inference mode·고정 가중치로 사용하며 detector optimizer/EMA에 포함하지 않는다. 모델 생성의 Python/NumPy/Torch CPU RNG 영향을 격리하고 EPOCH별 데이터셋이 같은 lazy runtime을 공유해 재로딩을 피한다. CUDA/auto는 num_workers=0을 요구하며 명시적 CPU 보정은 Worker별 lazy loading을 지원한다. 실제 검증과 일반 추론에는 보정을 적용하지 않는다.

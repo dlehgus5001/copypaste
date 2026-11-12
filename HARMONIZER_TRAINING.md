@@ -46,9 +46,11 @@ python scripts/prepare_harmonizer.py
 ```bash
 python run.py preview \
   --config configs/online_patch_harmonized.json \
-  --harmonizer-device cuda \
-  --count 20 \
-  --output outputs/preview_train_harmonized_v1
+  --object-resolution-scale-range 0.25 0.5 \
+  --object-blur-sigma-range 0.8 1.6 \
+  --harmonizer-device cpu \
+  --count 5 \
+  --output outputs/preview_train_degraded_v1
 ```
 
 `sample_0000.png`는 Harmonizer까지 적용된 학습 입력이고, `sample_0000_boxes.png`는 정답 박스를 그린 이미지다. 개별 마스크와 JSON도 함께 저장한다. 출력 폴더는 새 이름을 사용한다.
@@ -86,17 +88,22 @@ python run.py train \
 
 각 config의 `output_dir/exp_name/` 아래에 checkpoint와 로그를 저장한다. 두 버전의 저장 폴더가 다르므로 결과가 섞이지 않는다. 기존 `configs/online.json`·`configs/online_patch.json`도 계속 사용할 수 있다.
 
-## 4. 색·블러·Harmonizer 강도 조절
+## 4. 색·해상도·블러·Harmonizer 강도 조절
 
 두 비교 config의 `copy_paste` 기본값은 다음과 같다.
 
 ```json
 "object_saturation_range": [0.2, 0.5],
 "object_contrast_range": [0.9, 1.0],
-"object_blur_sigma_range": [0.4, 1.0]
+"object_resolution_scale_range": [0.25, 0.5],
+"object_blur_sigma_range": [0.8, 1.6]
 ```
 
-처리 순서는 **배경 선택/패치 추출 → 객체 크기 변환 → 객체 채도·대비 조정 → 객체 블러 → 합성 → Harmonizer → YOLOX 학습 전처리**다. 작은 채도 값은 빨간색 등 쨍한 색을 줄인다. Harmonizer는 이후 색·조명을 추가로 바꾸므로 최종 preview에서도 색을 확인한다. 클래스별 크기는 `copy_paste.object_long_side_range_by_category`를 사용하며, 기존 크기·객체 수 CLI 옵션도 지원한다.
+처리 순서는 **배경 선택/패치 추출 → 객체 크기 변환 → 채도·대비 → 흙색 얼룩(선택) → 객체 해상도 저하 → 객체 블러 → 합성 → Harmonizer → YOLOX 학습 전처리**다. 작은 채도 값은 빨간색 등 쨍한 색을 줄인다. Harmonizer는 이후 색·조명을 추가로 바꾸므로 최종 preview에서도 색을 확인한다. 클래스별 크기는 `copy_paste.object_long_side_range_by_category`를 사용하며, 기존 크기·객체 수 CLI 옵션도 지원한다.
+
+`object_resolution_scale_range`는 객체마다 무작위로 선택하는 내부 축소 비율이다. 예를 들어 최종 긴 변이 80픽셀인 객체에 `[0.25, 0.5]`를 사용하면 약 20~40픽셀로 줄였다가 80픽셀로 복원해 디테일을 없앤다. 객체의 최종 크기·마스크·정답 박스와 배경 픽셀은 유지한다. 마스크로 정규화한 축소·확대로 외부의 검은 픽셀이 섞이는 것을 막는다. 값은 `0 < MIN <= MAX <= 1`이며 작을수록 더 강하게 저하된다. 약하게는 `[0.5, 0.75]`, 더 강하게는 `[0.15, 0.3]`부터 비교할 수 있다. 생략 또는 `[1, 1]`은 해상도 저하를 끄며 기존 처리 결과를 유지한다. 추가 패키지는 필요 없다.
+
+위 `--object-resolution-scale-range`·`--object-blur-sigma-range` 옵션은 `train`과 `paste-multi`에도 동일하게 사용할 수 있다. 계속 적용하려면 실제 학습 JSON의 `copy_paste`를 바꾼다. 네 비교 config와 `paste_multi.json`에는 위 기본값을 적용했고, 기존 `online.json`·`online_patch.json` 등은 변경하지 않았다. 실행 중인 학습은 설정을 자동으로 다시 읽지 않으므로 새 실행부터 적용된다. 설정을 바꿔 `--resume`이 거부되면 새 config와 `--checkpoint`로 fine-tuning한다.
 
 보정하는 config의 최상위 `harmonizer` 설정은 다음과 같다.
 

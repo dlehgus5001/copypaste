@@ -163,6 +163,11 @@ class OnlineCopyPasteDataset(Dataset):
                                           or self.object_contrast != (1.0, 1.0))
         self.object_blur_sigma = _pair(config.get("object_blur_sigma_range", [0, 0]),
                                        "object_blur_sigma_range", minimum=0)
+        self.object_resolution_scale = _pair(config.get("object_resolution_scale_range", [1, 1]),
+                                             "object_resolution_scale_range", minimum=0)
+        if not 0 < self.object_resolution_scale[0] <= self.object_resolution_scale[1] <= 1:
+            raise ValueError("object_resolution_scale_range requires 0 < MIN <= MAX <= 1")
+        self.object_resolution_enabled = self.object_resolution_scale != (1.0, 1.0)
         self.object_dirt_strength = _pair(config.get("object_dirt_strength_range", [0, 0]),
                                           "object_dirt_strength_range", minimum=0)
         if self.object_dirt_strength[1] > 1:
@@ -173,7 +178,8 @@ class OnlineCopyPasteDataset(Dataset):
                        for v in self.object_dirt_color)):
             raise ValueError("object_dirt_color_bgr must contain three integers between 0 and 255")
         self.object_texture_enabled = (self.object_blur_sigma != (0, 0)
-                                       or self.object_dirt_strength != (0, 0))
+                                       or self.object_dirt_strength != (0, 0)
+                                       or self.object_resolution_enabled)
         with startup_stage("Indexing object/mask files"):
             self.objects = self._read_objects(config.get("objects_manifest", "objects/manifest.json"))
         by_category = {}
@@ -435,14 +441,24 @@ class OnlineCopyPasteDataset(Dataset):
                     texture_rng = np.random.default_rng(texture_seed)
                     sigma = float(texture_rng.uniform(*self.object_blur_sigma))
                     strength = float(texture_rng.uniform(*self.object_dirt_strength))
+                    resolution_scale = 1.0
+                    if self.object_resolution_enabled:
+                        # A separate draw keeps existing blur/stain values and
+                        # stain texture identical when changing resolution only.
+                        resolution_rng = np.random.default_rng(np.random.SeedSequence([
+                            texture_seed, 0xAE501,
+                        ]))
+                        resolution_scale = float(resolution_rng.uniform(*self.object_resolution_scale))
                     rendered_obj = apply_object_surface(
                         rendered_obj, mask, blur_sigma=sigma, dirt_strength=strength,
-                        dirt_color_bgr=self.object_dirt_color, rng=texture_rng,
+                        dirt_color_bgr=self.object_dirt_color, rng=texture_rng, resolution_scale=resolution_scale,
                     )
                     if appearance is None:
                         appearance = {}
                     appearance.update(blur_sigma=sigma, dirt_strength=strength,
                                       dirt_color_bgr=list(self.object_dirt_color), texture_seed=texture_seed)
+                    if self.object_resolution_enabled:
+                        appearance["resolution_scale"] = resolution_scale
                 foreground = rendered_obj[source_y:source_y + bottom - top, source_x:source_x + right - left]
                 region[:] = np.clip(np.rint(foreground * alpha + region * (1 - alpha)), 0, 255).astype(np.uint8)
                 masks = surviving + [visible]

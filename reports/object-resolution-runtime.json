@@ -1,0 +1,41 @@
+{
+  "input": "synthetic development objects and backgrounds only",
+  "actual_local_harmonizer_weights": true,
+  "checkpoint_sha256": "401dd03706fc6fa37b4600ae4c643a2fa9ad0f11351acfbf030cb5d3490de6ca",
+  "shape": [
+    640,
+    640,
+    3
+  ],
+  "object_count": 5,
+  "resolution_scales": [
+    0.3720957646106837,
+    0.34141336028361247,
+    0.4398152303325408,
+    0.47298427199719756,
+    0.409243878037423
+  ],
+  "blur_sigmas": [
+    1.501347704296991,
+    1.414369645816172,
+    1.1193603540928083,
+    1.351825901078087,
+    1.3950304757055196
+  ],
+  "same_labels": true,
+  "same_masks": true,
+  "same_background_pixels": true,
+  "after_foreground_inner_laplacian_mean_abs": {
+    "reference": 2.423696517944336,
+    "degraded": 1.5071882009506226
+  },
+  "limitations": "Synthetic graphics only; these scores do not establish matching to user aerial data or detector AP improvement. No GPU benchmark.",
+  "actual_harmonized_training": {
+    "workflow": "cpu_diagnostic",
+    "device": "cpu",
+    "completed_epochs": 1,
+    "training_images": 2,
+    "mean_loss": 11.882354736328125,
+    "checkpoint_records_resolution_and_harmonizer": true
+  }
+}

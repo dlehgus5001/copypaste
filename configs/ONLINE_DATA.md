@@ -184,7 +184,7 @@ python run.py preview --config configs/online_patch.json \
 - `object_dirt_strength_range`는 객체마다 선택하는 흙색 레이어의 최대 국소 불투명도다. 범위는 0~1이며 0이면 끈다. 값이 면적 비율을 뜻하지는 않는다. 거친 얼룩과 더 작은 입자 패턴을 절차적으로 생성해 고르게 칠하는 대신 위치별 강도를 바꾼다.
 - `object_dirt_color_bgr`는 흙색 `[파랑, 초록, 빨강]`이며 0~255 정수다. 기본값은 갈색이다. 밝은 먼지와 짙은 흙 등 실제 데이터의 색에 맞춰 조절한다.
 
-처리 순서는 객체 크기·회전 → 채도·대비 → 흙색 얼룩 → 객체 블러 → 배경과 합성 → 기존 전체 이미지 증강이다. 객체의 표면 색을 바꾸는 효과이며 별도 물체로 가리는 처리가 아니므로 원래 Mask·정답 Box·클래스를 유지한다. 배경을 직접 보정하지 않지만 기존 전체 이미지용 blur·noise·brightness는 계속 별도로 적용된다.
+처리 순서는 객체 크기·회전 → 채도·대비 → 흙색 얼룩 → 해상도 저하(활성화 시) → 객체 블러 → 배경과 합성 → 기존 전체 이미지 증강이다. 객체의 표면 색을 바꾸는 효과이며 별도 물체로 가리는 처리가 아니므로 원래 Mask·정답 Box·클래스를 유지한다. 배경을 직접 보정하지 않지만 기존 전체 이미지용 blur·noise·brightness는 계속 별도로 적용된다.
 
 기본 `object_blur_sigma_range`, `object_dirt_strength_range`는 `[0, 0]`이며 이 경우 기존 픽셀·metadata·난수 진행이 같다. 표면 효과는 색 보정·배치와 별도의 난수를 사용하므로 켜고 꺼도 기존 채도·대비 추출값과 객체 배치가 유지된다. 활성화한 경우 Preview JSON의 `instances[].appearance`에 `blur_sigma`, `dirt_strength`, `dirt_color_bgr`, `texture_seed`를 추가한다. 절차적 얼룩이 실제 흙 외형과 일치하거나 탐지 정확도를 개선한다고 검증한 것은 아니므로 실제 원본 패치와 비교해 강도를 조절한다.
 
@@ -198,6 +198,31 @@ python run.py preview --config configs/online_patch.json \
 ```
 
 흙색은 `--object-dirt-color-bgr 70 100 130`으로 바꿀 수 있다. 동일한 옵션을 `train`에도 지정하거나, 지속 적용할 값을 실제 학습 JSON에 기록한다. 출력 폴더는 새 폴더 또는 빈 폴더를 사용한다.
+
+### 객체 해상도를 낮춰 디테일 줄이기
+
+`copy_paste.object_resolution_scale_range`는 객체의 최종 크기를 유지하며 내부 해상도만 낮추는 비율이다.
+
+```json
+"object_resolution_scale_range": [0.25, 0.5],
+"object_blur_sigma_range": [0.8, 1.6]
+```
+
+긴 변 80픽셀 객체라면 약 20~40픽셀로 축소한 뒤 80픽셀로 복원한다. 객체마다 범위 안의 값을 무작위로 선택한다. 면적 보간으로 축소하고 선형 보간으로 복원하며, 색상과 Mask 가중치를 함께 처리해 주변 검정색이 섞이지 않도록 한다. 얇은 마스크 부분에 복원 가중치가 없으면 원래 픽셀을 유지한다. 배경·최종 이미지 크기·Mask·정답 Box·클래스는 바뀌지 않는다.
+
+유효 범위는 `0 < MIN <= MAX <= 1`이고 작은 값일수록 디테일이 더 줄어든다. 약하게는 `[0.5, 0.75]`, 강하게는 `[0.15, 0.3]`으로 비교할 수 있다. 생략 또는 `[1, 1]`이면 꺼지며 기존 픽셀·metadata·난수 진행을 유지한다. 활성화 시 객체별 비율은 `instances[].appearance.resolution_scale`에 기록된다. 해상도 비율 난수는 기존 blur/dirt 추출과 분리해, 기존 블러·얼룩 선택값과 배치를 유지한다. 처리 순서는 크기·회전 → 채도·대비 → 흙색 얼룩(선택) → 해상도 저하 → 블러 → 합성이다.
+
+```bash
+python run.py preview \
+  --config configs/online_patch_harmonized.json \
+  --object-resolution-scale-range 0.25 0.5 \
+  --object-blur-sigma-range 0.8 1.6 \
+  --harmonizer-device cpu \
+  --count 5 \
+  --output outputs/preview_train_degraded_v1
+```
+
+같은 두 객체 효과 옵션은 `train`·`paste-multi`·`export`에도 사용할 수 있다. CLI는 해당 실행의 JSON을 덮어쓰며, 학습에 지속 적용하려면 실제 학습 JSON에 저장한다. 추가 패키지는 없다. 실행 중인 학습은 config를 다시 읽지 않으므로 새 실행부터 적용한다. 새 네 비교 config와 `paste_multi.json`은 위 해상도·블러 값을 사용하며, 기존 `online.json`·`online_patch.json`은 그대로다. 보정 전후를 실제 원본 패치와 비교해 조절한다.
 
 학습 Dataset은 합성 이미지·Mask를 메모리에서 바로 YOLOX로 전달하고 파일을 쓰지 않는다. `train`, `preview`, `export`에서 객체 수·크기를 명령 옵션으로 바꾸면 해당 실행에만 적용한다. 원래 JSON 파일은 수정하지 않는다. `--object-size`와 `--object-size-range`는 함께 지정하지 않는다.
 
